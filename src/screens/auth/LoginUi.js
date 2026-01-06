@@ -1,17 +1,25 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppButton from "../../shared/components/AppButton";
 import AppInput from "../../shared/components/AppInput";
 import AuthSegment from "../../shared/components/AuthSegment";
 import { colors } from "../../shared/theme/colors";
 
 export default  function LoginUi(){
+
+    const router = useRouter();
+
     return(
         <View style={styles.container}>
             <Text style={styles.title}>Orderly</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Manage All orders in one place.</Text>
 
-            <AuthSegment />
+            <AuthSegment
+                active="login"
+                onPressLogin={() => {}}
+                onPressSignup={() => router.push("/(auth)/signup")}
+            />
 
             <AppInput label="Email" placeholder="Enter your email" keyboardType="email-address" />
             <AppInput label="Password" placeholder="Enter your password" secureTextEntry />
@@ -24,7 +32,10 @@ export default  function LoginUi(){
             <AppButton title="Login" />
 
             <Text style={styles.footerText}>
-                Don’t have an account? <Text style={styles.link}>Register</Text>
+                Don’t have an account?{" "}
+                <Pressable onPress={() => router.push("/(auth)/signup")}>
+                <Text style={styles.link}>Register</Text>
+                </Pressable>
             </Text>
 
         </View>
