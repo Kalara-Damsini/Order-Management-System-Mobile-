@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import AuthSegment from "../../shared/components/AuthSegment";
 import { colors } from "../../shared/theme/colors";
 
 export default  function LoginUi(){
@@ -7,6 +8,9 @@ export default  function LoginUi(){
             <Text style={styles.title}>Orderly</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Manage All orders in one place.</Text>
+
+            <AuthSegment />
+
         </View>
     );
 }
