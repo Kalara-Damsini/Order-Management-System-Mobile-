@@ -1,15 +1,24 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { colors } from "../theme/colors";
 
-export default function AppInput({ label, placeholder, secureTextEntry, keyboardType }) {
+export default function AppInput({ label,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  value,
+  onChangeText,
+  autoCapitalize = "none", }) {
   return (
-    <View style={styles.container}>
+     <View style={styles.container}>
       {!!label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         placeholder={placeholder}
         style={styles.input}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
+        value={value}
+        onChangeText={onChangeText}
+        autoCapitalize={autoCapitalize}
       />
     </View>
   );

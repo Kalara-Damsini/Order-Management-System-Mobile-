@@ -3,63 +3,88 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppButton from "../../shared/components/AppButton";
 import AppInput from "../../shared/components/AppInput";
 import AuthSegment from "../../shared/components/AuthSegment";
+import Screen from "../../shared/components/Screen";
 import { colors } from "../../shared/theme/colors";
-
 export default function SignupUI() {
-     const router = useRouter();
+  const router = useRouter();
+
   return (
-    <View style={styles.container}>
+    <Screen>
+      {/* Brand / Intro */}
+      <View style={styles.brandBlock}>
+        <Text style={styles.brandTitle}>Orderly</Text>
+        <Text style={styles.brandSubtitle}>Manage all orders in one place.</Text>
+      </View>
+
+      {/* Segment */}
       <AuthSegment
         active="signup"
         onPressLogin={() => router.push("/(auth)/login")}
         onPressSignup={() => {}}
       />
 
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Sign up to get started</Text>
+      {/* Page Title */}
+      <Text style={styles.pageTitle}>Create Account</Text>
+      <Text style={styles.pageSubtitle}>Sign up to get started</Text>
 
+      {/* Inputs */}
       <AppInput label="Full Name" placeholder="Enter your name" />
       <AppInput label="Email" placeholder="Enter your email" keyboardType="email-address" />
       <AppInput label="Password" placeholder="Create a password" secureTextEntry />
       <AppInput label="Confirm Password" placeholder="Confirm your password" secureTextEntry />
 
+      {/* Terms */}
       <Text style={styles.termsText}>
         By signing up, you agree to our <Text style={styles.link}>Terms</Text> and{" "}
         <Text style={styles.link}>Privacy Policy</Text>.
       </Text>
 
+      {/* Button */}
       <AppButton title="Sign Up" />
 
+      {/* Footer */}
       <Text style={styles.footerText}>
         Already have an account?{" "}
         <Pressable onPress={() => router.push("/(auth)/login")}>
           <Text style={styles.link}>Log In</Text>
         </Pressable>
       </Text>
-    </View>
+     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    padding: 24,
-    justifyContent: "center",
+  brandBlock: {
+    alignItems: "center",
+    marginBottom: 18,
   },
-  title: {
-    fontSize: 28,
+  brandTitle: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: 6,
+  },
+  brandSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+
+  pageTitle: {
+    fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 6,
     color: colors.text,
   },
-  subtitle: {
-    fontSize: 16,
+  pageSubtitle: {
+    fontSize: 15,
     color: "#666",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 18,
   },
+
   termsText: {
     fontSize: 13,
     color: "#6B7280",

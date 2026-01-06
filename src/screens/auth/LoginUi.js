@@ -1,16 +1,47 @@
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { getTempUser, seedTempUser } from "../../services/tempAuth";
 import AppButton from "../../shared/components/AppButton";
 import AppInput from "../../shared/components/AppInput";
 import AuthSegment from "../../shared/components/AuthSegment";
+import Screen from "../../shared/components/Screen";
 import { colors } from "../../shared/theme/colors";
+
 
 export default  function LoginUi(){
 
     const router = useRouter();
 
+    useEffect(() => {
+    seedTempUser(); // saves damsi@gmail.com & 123 once
+    }, []);
+
+    const handleLogin = async () => {
+    const user = await getTempUser();
+
+    if (!user) {
+        alert("No user found");
+        return;
+    }
+
+    if (email === user.email && password === user.password) {
+         router.replace("/(main)/home");
+        // later → router.replace("/(main)/home");
+    } else {
+        alert("Invalid email or password");
+    }
+    };
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+
+
+
     return(
-        <View style={styles.container}>
+        <Screen>
+            <View style={styles.container}>
             <Text style={styles.title}>Orderly</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Manage All orders in one place.</Text>
@@ -21,15 +52,16 @@ export default  function LoginUi(){
                 onPressSignup={() => router.push("/(auth)/signup")}
             />
 
-            <AppInput label="Email" placeholder="Enter your email" keyboardType="email-address" />
-            <AppInput label="Password" placeholder="Enter your password" secureTextEntry />
+            <AppInput label="Email" placeholder="Enter your email" value={email} onChangeText={setEmail} />
+<AppInput label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
 
              {/* Forgot password (UI only) */}
             <View style={styles.forgotWrapper}>
                 <Text style={styles.forgotText}>Forgot password?</Text>
             </View>
 
-            <AppButton title="Login" />
+            <AppButton title="Login" onPress={handleLogin} />
+
 
             <Text style={styles.footerText}>
                 Don’t have an account?{" "}
@@ -38,7 +70,9 @@ export default  function LoginUi(){
                 </Pressable>
             </Text>
 
-        </View>
+            </View>
+        </Screen>
+        
     );
 }
 

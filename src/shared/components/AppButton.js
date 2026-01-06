@@ -1,9 +1,14 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { colors } from "../theme/colors";
 
-export default function AppButton({ title }) {
+export default function AppButton({ title, onPress, disabled }) {
   return (
-    <TouchableOpacity style={styles.button} activeOpacity={0.9}>
+     <TouchableOpacity
+      style={[styles.button, disabled && styles.disabled]}
+      activeOpacity={0.9}
+      onPress={onPress}
+      disabled={disabled}
+    >
       <Text style={styles.text}>{title}</Text>
     </TouchableOpacity>
   );
