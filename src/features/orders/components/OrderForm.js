@@ -1,60 +1,106 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import AppInput from "../../../shared/components/AppInput";
 
-function SelectBox({ label, value }) {
+import AppInput from "../../../shared/components/AppInput";
+import DateField from "../../../shared/components/DateField";
+
+function SelectBox({ label, value, onPress }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <Pressable style={styles.select}>
-        <Text style={styles.selectText}>{value}</Text>
+      <Pressable style={styles.select} onPress={onPress}>
+        <Text style={[styles.selectText, !value && styles.placeholder]}>
+          {value || "Select a platform"}
+        </Text>
         <Ionicons name="chevron-down" size={18} color="#6B7280" />
       </Pressable>
     </View>
   );
 }
 
-export default function OrderForm({ values, onChange }) {
-  const set = (k) => (v) => onChange?.(k, v);
+export default function OrderForm({ values, onChange, onPressPlatform }) {
+  const set = (key) => (val) => onChange?.(key, val);
 
   return (
     <View style={styles.form}>
+      {/* Row 1 */}
       <View style={styles.twoCol}>
         <View style={{ flex: 1 }}>
-          <AppInput label="Customer Name" placeholder="Enter customer's full name" value={values.customerName} onChangeText={set("customerName")} />
+          <AppInput
+            label="Customer Name"
+            placeholder="Enter customer's full name"
+            value={values.customerName}
+            onChangeText={set("customerName")}
+          />
         </View>
         <View style={{ flex: 1 }}>
-          <AppInput label="Product / Service" placeholder="Enter product or service name" value={values.productName} onChangeText={set("productName")} />
+          <AppInput
+            label="Product / Service"
+            placeholder="Enter product or service name"
+            value={values.productName}
+            onChangeText={set("productName")}
+          />
         </View>
       </View>
 
+      {/* Row 2 (Dates - real date picker) */}
       <View style={styles.twoCol}>
-        <View style={{ flex: 1 }}>
-          <AppInput label="Order Date" placeholder="yyyy-mm-dd" value={values.orderDate} onChangeText={set("orderDate")} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <AppInput label="Deadline Date" placeholder="yyyy-mm-dd" value={values.deadline} onChangeText={set("deadline")} />
-        </View>
+        <DateField
+          label="Order Date"
+          value={values.orderDate}
+          onChange={set("orderDate")}
+        />
+        <DateField
+          label="Deadline Date"
+          value={values.deadline}
+          onChange={set("deadline")}
+        />
       </View>
 
-      <SelectBox label="Platform" value={values.platformLabel || "Select a platform"} />
+      {/* Platform */}
+      <SelectBox
+        label="Platform"
+        value={values.platformLabel}
+        onPress={onPressPlatform}
+      />
 
       <View style={styles.divider} />
 
+      {/* Money */}
       <View style={styles.threeCol}>
         <View style={{ flex: 1 }}>
-          <AppInput label="Total Price" placeholder="e.g. 12500" keyboardType="number-pad" value={values.total} onChangeText={set("total")} />
+          <AppInput
+            label="Total Price"
+            placeholder="e.g. 12500"
+            keyboardType="number-pad"
+            value={values.total}
+            onChangeText={set("total")}
+          />
         </View>
+
         <View style={{ flex: 1 }}>
-          <AppInput label="Advance" placeholder="e.g. 5000" keyboardType="number-pad" value={values.advance} onChangeText={set("advance")} />
+          <AppInput
+            label="Advance"
+            placeholder="e.g. 5000"
+            keyboardType="number-pad"
+            value={values.advance}
+            onChangeText={set("advance")}
+          />
         </View>
+
         <View style={{ flex: 1 }}>
-          <AppInput label="Balance Due" placeholder="Auto" value={values.balance} onChangeText={() => {}} />
+          <AppInput
+            label="Balance Due"
+            placeholder="Auto"
+            value={values.balance}
+            editable={false}
+          />
         </View>
       </View>
 
       <View style={styles.divider} />
 
+      {/* Description */}
       <AppInput
         label="Order items / Description"
         placeholder="Add order items or description..."
@@ -62,6 +108,7 @@ export default function OrderForm({ values, onChange }) {
         onChangeText={set("description")}
       />
 
+      {/* Notes */}
       <AppInput
         label="Notes"
         placeholder="Add any additional details or instructions..."
@@ -77,8 +124,14 @@ export default function OrderForm({ values, onChange }) {
 
 const styles = StyleSheet.create({
   form: { gap: 6 },
+
   field: { marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: "800", color: "#111827", marginBottom: 6 },
+  label: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 6,
+  },
 
   select: {
     height: 48,
@@ -91,7 +144,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  selectText: { color: "#9CA3AF", fontWeight: "700" },
+  selectText: { fontWeight: "800", color: "#111827" },
+  placeholder: { color: "#9CA3AF" },
 
   divider: { height: 1, backgroundColor: "#EEF2F6", marginVertical: 10 },
 

@@ -26,7 +26,7 @@ export default  function LoginUi(){
     }
 
     if (email === user.email && password === user.password) {
-         router.replace("/(main)/home");
+         router.replace("/app/(main)/home.js");
         // later → router.replace("/(main)/home");
     } else {
         alert("Invalid email or password");
@@ -53,7 +53,7 @@ export default  function LoginUi(){
             />
 
             <AppInput label="Email" placeholder="Enter your email" value={email} onChangeText={setEmail} />
-<AppInput label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
+            <AppInput label="Password" placeholder="Enter your password" secureTextEntry value={password} onChangeText={setPassword} />
 
              {/* Forgot password (UI only) */}
             <View style={styles.forgotWrapper}>

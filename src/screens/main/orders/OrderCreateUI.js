@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-
 import OrderForm from "../../../features/orders/components/OrderForm";
 import AppButton from "../../../shared/components/AppButton";
 import Screen from "../../../shared/components/Screen";
@@ -10,17 +9,16 @@ export default function OrderCreateUI() {
   const router = useRouter();
 
   const [values, setValues] = useState({
-    customerName: "",
-    productName: "",
-    orderDate: "",
-    deadline: "",
-    platformLabel: "",
-    total: "",
-    advance: "",
-    balance: "",
-    description: "",
-    notes: "",
-  });
+  customerName: "",
+  productName: "",
+  orderDate: null,    
+  deadline: null,      
+  total: "",
+  advance: "",
+  description: "",
+  notes: "",
+});
+
 
   const balance = useMemo(() => {
     const total = Number(values.total || 0);
@@ -30,11 +28,8 @@ export default function OrderCreateUI() {
   }, [values.total, values.advance]);
 
   const onChange = (key, value) => {
-    setValues((p) => {
-      const next = { ...p, [key]: value };
-      return { ...next, balance };
-    });
-  };
+  setValues((prev) => ({ ...prev, [key]: value }));
+};
 
   return (
     <View style={{ flex: 1 }}>
@@ -42,7 +37,8 @@ export default function OrderCreateUI() {
         <Text style={styles.title}>Add Order</Text>
         <Text style={styles.sub}>Fill the form and save</Text>
 
-        <OrderForm values={{ ...values, balance }} onChange={onChange} />
+        <OrderForm values={values} onChange={onChange} />
+
         <View style={{ height: 90 }} />
       </Screen>
 
