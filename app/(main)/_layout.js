@@ -18,10 +18,6 @@ export default function MainLayout() {
         <Drawer.Screen name="home" options={{ title: "Dashboard" }} />
         <Drawer.Screen name="orders/index" options={{ title: "Orders" }} />
         <Drawer.Screen name="orders/create" options={{ title: "Add Order" }} />
-
-        {/* add these only if you create routes */}
-        <Drawer.Screen name="customers" options={{ title: "Customers" }} />
-        <Drawer.Screen name="reports" options={{ title: "Reports" }} />
         <Drawer.Screen name="settings" options={{ title: "Settings" }} />
         <Drawer.Screen name="help" options={{ title: "Help & Support" }} />
       </Drawer>
