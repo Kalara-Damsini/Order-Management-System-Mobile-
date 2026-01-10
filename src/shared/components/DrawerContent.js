@@ -6,9 +6,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 const MENU = [
   { label: "Dashboard", icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />, route: "/(main)/home" },
   { label: "Orders", icon: (c, s) => <MaterialCommunityIcons name="cart-outline" size={s} color={c} />, route: "/(main)/orders", badge: 3 },
-  { label: "Customers", icon: (c, s) => <Ionicons name="people-outline" size={s} color={c} />, route: "/(main)/customers" },
-  { label: "Products", icon: (c, s) => <Ionicons name="bar-chart-outline" size={s} color={c} />, route: "/(main)/reports" },
-  { label: "Reports", icon: (c, s) => <Ionicons name="extension-puzzle-outline" size={s} color={c} />, route: "/(main)/integrations" },
+  
 ];
 
 const UTILITY = [

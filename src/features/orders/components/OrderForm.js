@@ -4,13 +4,13 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import AppInput from "../../../shared/components/AppInput";
 import DateField from "../../../shared/components/DateField";
 
-function SelectBox({ label, value, onPress }) {
+function SelectBox({ label, value, onPress, placeholder = "Select" }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <Pressable style={styles.select} onPress={onPress}>
         <Text style={[styles.selectText, !value && styles.placeholder]}>
-          {value || "Select a platform"}
+          {value || placeholder}
         </Text>
         <Ionicons name="chevron-down" size={18} color="#6B7280" />
       </Pressable>
@@ -33,17 +33,43 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
             onChangeText={set("customerName")}
           />
         </View>
+
         <View style={{ flex: 1 }}>
           <AppInput
-            label="Product / Service"
+            label="Mobile No"
+            placeholder="e.g. 0771234567"
+            keyboardType="phone-pad"
+            value={values.mobileNo}
+            onChangeText={set("mobileNo")}
+          />
+        </View>
+      </View>
+
+      {/* Row 2 */}
+      <View style={styles.twoCol}>
+        <View style={{ flex: 1 }}>
+          <AppInput
+            label="Products"
             placeholder="Enter product or service name"
             value={values.productName}
             onChangeText={set("productName")}
           />
         </View>
+
+        <View style={{ flex: 1 }}>
+          <AppInput
+            label="Address"
+            placeholder="Enter delivery address"
+            value={values.address}
+            onChangeText={set("address")}
+            multiline
+            numberOfLines={3}
+            styleOverride={{ height: 90, textAlignVertical: "top" }}
+          />
+        </View>
       </View>
 
-      {/* Row 2 (Dates - real date picker) */}
+      {/* Row 3 (Dates - real date picker) */}
       <View style={styles.twoCol}>
         <DateField
           label="Order Date"
@@ -62,6 +88,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
         label="Platform"
         value={values.platformLabel}
         onPress={onPressPlatform}
+        placeholder="Select a platform"
       />
 
       <View style={styles.divider} />
