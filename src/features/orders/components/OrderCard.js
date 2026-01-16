@@ -1,25 +1,41 @@
-import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import PlatformIcon from "./PlatformIcon";
-import StatusTag from "./StatusTag";
+import StatusTag from "./StatusTag"; // ✅ use your existing colored status component
 
-export default function OrderCard({ order, onPress }) {
-  const balance = useMemo(() => Math.max(0, (order.total || 0) - (order.advance || 0)), [order]);
+export default function OrderCard({ order, onPress, rightAction }) {
+  const orderId = order?.orderCode || order?.id || "-";
+  const customerName = order?.customerName || "-";
+  const platform = order?.platform || "-";
+  const placedDate = order?.placedDate || order?.orderDate || "-";
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.topRow}>
-        <View style={styles.left}>
-          <Text style={styles.customer}>{order.customerName}</Text>
-          <View style={styles.metaRow}>
-            <PlatformIcon platform={order.platform} />
-            <Text style={styles.deadline}>Deadline: {order.deadline}</Text>
-          </View>
+    <Pressable onPress={onPress} style={styles.card}>
+      {/* Header row */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.orderId}>{String(orderId)}</Text>
+          <Text style={styles.customer}>{customerName}</Text>
         </View>
 
-        <View style={styles.right}>
-          <StatusTag status={order.status} />
-          {balance > 0 && <Text style={styles.balance}>Balance: LKR {balance.toLocaleString()}</Text>}
+        {/* ✅ Right side actions: StatusTag + Delete button */}
+        <View style={styles.headerRight}>
+          {/* ✅ Colored status tag (same as before) */}
+          <StatusTag status={order?.status} />
+
+          {/* ✅ Delete button slot */}
+          {rightAction ? <View style={styles.rightAction}>{rightAction}</View> : null}
+        </View>
+      </View>
+
+      {/* Body */}
+      <View style={styles.body}>
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>Platform</Text>
+          <Text style={styles.metaValue}>{platform}</Text>
+        </View>
+
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>Placed</Text>
+          <Text style={styles.metaValue}>{placedDate}</Text>
         </View>
       </View>
     </Pressable>
@@ -34,11 +50,28 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
   },
-  topRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  left: { flex: 1 },
-  right: { alignItems: "flex-end", gap: 8 },
-  customer: { fontSize: 16, fontWeight: "900", color: "#111827" },
-  metaRow: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 8 },
-  deadline: { fontSize: 12, color: "#6B7280", fontWeight: "700" },
-  balance: { fontSize: 12, color: "#111827", fontWeight: "900" },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerLeft: { flex: 1 },
+
+  headerRight: {
+    alignItems: "flex-end",
+    gap: 10, // space between StatusTag and delete button
+  },
+  rightAction: {
+    alignSelf: "flex-end",
+  },
+
+  orderId: { fontSize: 14, fontWeight: "900", color: "#111827" },
+  customer: { marginTop: 3, fontSize: 12, fontWeight: "700", color: "#6B7280" },
+
+  body: { marginTop: 12, gap: 8 },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  metaLabel: { fontSize: 12, fontWeight: "800", color: "#6B7280" },
+  metaValue: { fontSize: 12, fontWeight: "900", color: "#111827" },
 });

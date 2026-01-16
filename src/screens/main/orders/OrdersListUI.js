@@ -12,8 +12,9 @@ import SearchBar from "../../../shared/components/SearchBar";
 export default function OrdersListUI() {
   const router = useRouter();
 
-  // keep orders in state so delete can work
-  const [orders, setOrders] = useState(() => (Array.isArray(mockOrders) ? mockOrders : []));
+  const [orders, setOrders] = useState(() =>
+    Array.isArray(mockOrders) ? mockOrders : []
+  );
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
@@ -33,7 +34,7 @@ export default function OrdersListUI() {
     const id = String(order?.id || "");
     if (!id) return;
 
-    Alert.alert("Delete order?", `Order ${id} will be removed.`, [
+    Alert.alert("Delete order?", `Order ${order?.orderCode || id} will be removed.`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -67,13 +68,14 @@ export default function OrdersListUI() {
 
     return list.filter((o) => {
       const customerName = String(o?.customerName ?? "").toLowerCase();
-      const orderId = String(o?.id ?? "").toLowerCase();
+      const orderId = String(o?.orderCode ?? o?.id ?? "").toLowerCase();
 
       const textOk = !q || customerName.includes(q) || orderId.includes(q);
       const statusOk = status === "All" ? true : o?.status === mapStatus[status];
       const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
 
-      const placedOk = !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
+      const placedOk =
+        !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
 
       return textOk && statusOk && platformOk && placedOk;
     });
@@ -102,20 +104,20 @@ export default function OrdersListUI() {
 
         <View style={styles.list}>
           {filtered.map((o) => (
-            <View key={String(o.id)} style={styles.itemWrap}>
-              <OrderCard
-                order={o}
-                onPress={() => router.push(`/(main)/orders/${o.id}`)}
-              />
-
-              {/* Delete button per order */}
-              <FloatingActionButton style={styles.floatbtn}
-                label="Delete"
-                icon="trash"
-                color="#DC2626"
-                onPress={() => onDelete(o)}
-              />
-            </View>
+            <OrderCard
+              key={String(o.id)}
+              order={o}
+              onPress={() => router.push(`/(main)/orders/${o.id}`)}
+              rightAction={
+                <FloatingActionButton
+                  label="" // icon only
+                  icon="trash"
+                  color="#DC2626"
+                  onPress={() => onDelete(o)}
+                  style={styles.deleteInsideCardBtn}
+                />
+              }
+            />
           ))}
         </View>
 
@@ -123,7 +125,12 @@ export default function OrdersListUI() {
       </Screen>
 
       {/* Add Order floating button */}
-      <FloatingActionButton onPress={() => router.push("/(main)/orders/create")} />
+      <FloatingActionButton
+        label="Add Order"
+        icon="add"
+        onPress={() => router.push("/(main)/orders/create")}
+      />
+
     </View>
   );
 }
@@ -132,6 +139,15 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "900", marginBottom: 4 },
   sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   list: { marginTop: 14, gap: 12 },
-  itemWrap: { gap: 8 },
-  floatbtn:{position: "relative",alignSelf: "flex-end",}
+
+  // makes the FAB behave like a small icon button INSIDE the card
+  deleteInsideCardBtn: {
+    position: "relative",
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    elevation: 0,
+  },
 });
