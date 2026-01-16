@@ -91,10 +91,9 @@ export default function OrdersListUI() {
       const textOk = !q || customerName.includes(q) || orderId.includes(q);
       const statusOk = status === "All" ? true : o?.status === mapStatus[status];
       const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
+      const placedOk =
+        !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
 
-      // use backend field: orderDate (or placedDate if you really store that)
-      const dateValue = String(o?.orderDate ?? o?.placedDate ?? "");
-      const placedOk = !pickedPlacedDate ? true : dateValue === pickedPlacedDate;
 
       return textOk && statusOk && platformOk && placedOk;
     });
@@ -130,27 +129,35 @@ export default function OrdersListUI() {
 
         <View style={styles.list}>
           {filtered.map((o) => (
-            <View key={String(o.id)} style={styles.itemWrap}>
-              <OrderCard
-                order={o}
-                onPress={() => router.push(`/(main)/orders/${o.id}`)}
-              />
 
-              <FloatingActionButton
-                style={styles.floatbtn}
-                label="Delete"
-                icon="trash"
-                color="#DC2626"
-                onPress={() => onDelete(o)}
-              />
-            </View>
+            <OrderCard
+              key={String(o.id)}
+              order={o}
+              onPress={() => router.push(`/(main)/orders/${o.id}`)}
+              rightAction={
+                <FloatingActionButton
+                  label="" // icon only
+                  icon="trash"
+                  color="#DC2626"
+                  onPress={() => onDelete(o)}
+                  style={styles.deleteInsideCardBtn}
+                />
+              }
+            />
           ))}
         </View>
 
         <View style={{ height: 90 }} />
       </Screen>
 
-      <FloatingActionButton onPress={() => router.push("/(main)/orders/create")} />
+
+      {/* Add Order floating button */}
+      <FloatingActionButton
+        label="Add Order"
+        icon="add"
+        onPress={() => router.push("/(main)/orders/create")}
+      />
+
     </View>
   );
 }
@@ -159,6 +166,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "900", marginBottom: 4 },
   sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   list: { marginTop: 14, gap: 12 },
-  itemWrap: { gap: 8 },
-  floatbtn: { position: "relative", alignSelf: "flex-end" },
+
+
+  // makes the FAB behave like a small icon button INSIDE the card
+  deleteInsideCardBtn: {
+    position: "relative",
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    elevation: 0,
+  },
 });
