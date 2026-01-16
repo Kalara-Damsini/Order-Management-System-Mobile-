@@ -1,24 +1,39 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import AppInput from "../../../shared/components/AppInput";
 import DateField from "../../../shared/components/DateField";
+import Dropdown from "../../../shared/components/Dropdown";
 
-function SelectBox({ label, value, onPress }) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <Pressable style={styles.select} onPress={onPress}>
-        <Text style={[styles.selectText, !value && styles.placeholder]}>
-          {value || "Select a platform"}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#6B7280" />
-      </Pressable>
-    </View>
-  );
-}
+const PLATFORM_OPTIONS = [
+  { label: "Instagram", value: "instagram" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "Facebook", value: "facebook" },
+  { label: "Website", value: "website" },
+];
 
-export default function OrderForm({ values, onChange, onPressPlatform }) {
+export default function OrderForm({ values = {}, onChange }) {
+  // SAFE DEFAULTS (prevents "cannot read property of undefined")
+  const safeValues = {
+    customerName: "",
+    mobileNo: "",
+    address: "",
+    productName: "",
+
+    orderDate: null,
+    deadline: null,
+
+    platform: "",
+    platformLabel: "",
+
+    total: "",
+    advance: "",
+    balance: "",
+
+    description: "",
+    notes: "",
+    ...values,
+  };
+
   const set = (key) => (val) => onChange?.(key, val);
 
   return (
@@ -29,39 +44,76 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
           <AppInput
             label="Customer Name"
             placeholder="Enter customer's full name"
-            value={values.customerName}
+            value={safeValues.customerName}
             onChangeText={set("customerName")}
           />
         </View>
+
         <View style={{ flex: 1 }}>
           <AppInput
             label="Product / Service"
             placeholder="Enter product or service name"
-            value={values.productName}
+            value={safeValues.productName}
             onChangeText={set("productName")}
           />
         </View>
       </View>
 
-      {/* Row 2 (Dates - real date picker) */}
+      {/* Mobile + Address */}
       <View style={styles.twoCol}>
-        <DateField
-          label="Order Date"
-          value={values.orderDate}
-          onChange={set("orderDate")}
-        />
-        <DateField
-          label="Deadline Date"
-          value={values.deadline}
-          onChange={set("deadline")}
-        />
+        <View style={{ flex: 1 }}>
+          <AppInput
+            label="Mobile No"
+            placeholder="e.g. 0771234567"
+            keyboardType="phone-pad"
+            value={safeValues.mobileNo}
+            onChangeText={set("mobileNo")}
+          />
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <AppInput
+            label="Address"
+            placeholder="Enter delivery address"
+            value={safeValues.address}
+            onChangeText={set("address")}
+            multiline
+            numberOfLines={3}
+            styleOverride={{ height: 90, textAlignVertical: "top" }}
+          />
+        </View>
       </View>
 
-      {/* Platform */}
-      <SelectBox
+      {/* Dates */}
+      <View style={styles.twoCol}>
+        <View style={{ flex: 1 }}>
+          <DateField
+            label="Order Date"
+            value={safeValues.orderDate}
+            onChange={set("orderDate")}
+          />
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <DateField
+            label="Deadline Date"
+            value={safeValues.deadline}
+            onChange={set("deadline")}
+          />
+        </View>
+      </View>
+
+      {/* ✅ Platform Dropdown */}
+      <Dropdown
         label="Platform"
-        value={values.platformLabel}
-        onPress={onPressPlatform}
+        value={safeValues.platformLabel}
+        placeholder="Select a platform"
+        options={PLATFORM_OPTIONS.map((p) => p.label)}
+        onChange={(pickedLabel) => {
+          const picked = PLATFORM_OPTIONS.find((p) => p.label === pickedLabel);
+          onChange?.("platformLabel", picked?.label || "");
+          onChange?.("platform", picked?.value || "");
+        }}
       />
 
       <View style={styles.divider} />
@@ -73,7 +125,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
             label="Total Price"
             placeholder="e.g. 12500"
             keyboardType="number-pad"
-            value={values.total}
+            value={safeValues.total}
             onChangeText={set("total")}
           />
         </View>
@@ -83,7 +135,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
             label="Advance"
             placeholder="e.g. 5000"
             keyboardType="number-pad"
-            value={values.advance}
+            value={safeValues.advance}
             onChangeText={set("advance")}
           />
         </View>
@@ -92,7 +144,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
           <AppInput
             label="Balance Due"
             placeholder="Auto"
-            value={values.balance}
+            value={safeValues.balance}
             editable={false}
           />
         </View>
@@ -104,7 +156,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
       <AppInput
         label="Order items / Description"
         placeholder="Add order items or description..."
-        value={values.description}
+        value={safeValues.description}
         onChangeText={set("description")}
       />
 
@@ -112,7 +164,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
       <AppInput
         label="Notes"
         placeholder="Add any additional details or instructions..."
-        value={values.notes}
+        value={safeValues.notes}
         onChangeText={set("notes")}
         multiline
         numberOfLines={4}
@@ -124,31 +176,7 @@ export default function OrderForm({ values, onChange, onPressPlatform }) {
 
 const styles = StyleSheet.create({
   form: { gap: 6 },
-
-  field: { marginBottom: 10 },
-  label: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 6,
-  },
-
-  select: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#EEF2F6",
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  selectText: { fontWeight: "800", color: "#111827" },
-  placeholder: { color: "#9CA3AF" },
-
   divider: { height: 1, backgroundColor: "#EEF2F6", marginVertical: 10 },
-
   twoCol: { flexDirection: "row", gap: 12 },
   threeCol: { flexDirection: "row", gap: 12 },
 });
