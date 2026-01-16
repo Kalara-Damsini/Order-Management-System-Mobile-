@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 
 import FloatingActionButton from "../../../features/orders/components/FloatingActionButton";
 import OrderCard from "../../../features/orders/components/OrderCard";
@@ -12,20 +12,37 @@ import SearchBar from "../../../shared/components/SearchBar";
 export default function OrdersListUI() {
   const router = useRouter();
 
+  // keep orders in state so delete can work
+  const [orders, setOrders] = useState(() => (Array.isArray(mockOrders) ? mockOrders : []));
+
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [platform, setPlatform] = useState("All");
-
-  // ✅ DATE DROPDOWN STATE (placed date)
   const [placedDate, setPlacedDate] = useState(null);
 
-  // Date → YYYY-MM-DD
   const toYMD = (date) => {
     if (!date) return "";
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    const d = new Date(date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  };
+
+  const onDelete = (order) => {
+    const id = String(order?.id || "");
+    if (!id) return;
+
+    Alert.alert("Delete order?", `Order ${id} will be removed.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
+        },
+      },
+    ]);
   };
 
   const filtered = useMemo(() => {
@@ -46,30 +63,21 @@ export default function OrdersListUI() {
     const q = query.trim().toLowerCase();
     const pickedPlacedDate = toYMD(placedDate);
 
-    const list = Array.isArray(mockOrders) ? mockOrders : [];
+    const list = Array.isArray(orders) ? orders : [];
 
     return list.filter((o) => {
       const customerName = String(o?.customerName ?? "").toLowerCase();
       const orderId = String(o?.id ?? "").toLowerCase();
 
-      const textOk =
-        !q || customerName.includes(q) || orderId.includes(q);
+      const textOk = !q || customerName.includes(q) || orderId.includes(q);
+      const statusOk = status === "All" ? true : o?.status === mapStatus[status];
+      const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
 
-      const statusOk =
-        status === "All" ? true : o?.status === mapStatus[status];
-
-      const platformOk =
-        platform === "All" ? true : o?.platform === mapPlatform[platform];
-
-      // ✅ PLACED DATE FILTER (ONLY DATE FILTER)
-      const placedOk =
-        !pickedPlacedDate
-          ? true
-          : String(o?.placedDate ?? "") === pickedPlacedDate;
+      const placedOk = !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
 
       return textOk && statusOk && platformOk && placedOk;
     });
-  }, [query, status, platform, placedDate]);
+  }, [orders, query, status, platform, placedDate]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -83,7 +91,6 @@ export default function OrdersListUI() {
           placeholder="Search by customer or order id..."
         />
 
-        {/* ✅ FILTER BAR WITH DATE DROPDOWN */}
         <OrdersFilterBar
           status={status}
           platform={platform}
@@ -95,20 +102,28 @@ export default function OrdersListUI() {
 
         <View style={styles.list}>
           {filtered.map((o) => (
-            <OrderCard
-              key={String(o.id)}
-              order={o}
-              onPress={() => router.push(`/(main)/orders/${o.id}`)}
-            />
+            <View key={String(o.id)} style={styles.itemWrap}>
+              <OrderCard
+                order={o}
+                onPress={() => router.push(`/(main)/orders/${o.id}`)}
+              />
+
+              {/* Delete button per order */}
+              <FloatingActionButton style={styles.floatbtn}
+                label="Delete"
+                icon="trash"
+                color="#DC2626"
+                onPress={() => onDelete(o)}
+              />
+            </View>
           ))}
         </View>
 
         <View style={{ height: 90 }} />
       </Screen>
 
-      <FloatingActionButton
-        onPress={() => router.push("/(main)/orders/create")}
-      />
+      {/* Add Order floating button */}
+      <FloatingActionButton onPress={() => router.push("/(main)/orders/create")} />
     </View>
   );
 }
@@ -117,4 +132,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "900", marginBottom: 4 },
   sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   list: { marginTop: 14, gap: 12 },
+  itemWrap: { gap: 8 },
+  floatbtn:{position: "relative",alignSelf: "flex-end",}
 });
