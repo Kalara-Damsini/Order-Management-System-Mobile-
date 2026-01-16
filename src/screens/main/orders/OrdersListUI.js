@@ -1,6 +1,5 @@
-
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { getOrdersApi } from "../../../features/orders/api/orders.api";
@@ -13,47 +12,27 @@ import SearchBar from "../../../shared/components/SearchBar";
 export default function OrdersListUI() {
   const router = useRouter();
 
-
-  // keep orders in state so delete can work
-  const [orders, setOrders] = useState(() => (Array.isArray(mockOrders) ? mockOrders : []));
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [platform, setPlatform] = useState("All");
-
   const [placedDate, setPlacedDate] = useState(null);
 
-  const toYMD = (date) => {
-
+  const toYMD = useCallback((date) => {
     if (!date) return "";
     const d = new Date(date);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${dd}`;
-  };
-
-  const onDelete = (order) => {
-    const id = String(order?.id || "");
-    if (!id) return;
-
-    Alert.alert("Delete order?", `Order ${id} will be removed.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
-        },
-      },
-    ]);
-  };
   }, []);
 
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getOrdersApi(); // ✅ GET /orders
+      const data = await getOrdersApi();
       setOrders(Array.isArray(data) ? data : []);
     } catch (e) {
       Alert.alert("Orders error", e?.message || "Failed to load orders");
@@ -62,12 +41,28 @@ export default function OrdersListUI() {
     }
   }, []);
 
-  // ✅ This runs EVERY time you come back to this screen
   useFocusEffect(
     useCallback(() => {
       loadOrders();
     }, [loadOrders])
   );
+
+  const onDelete = useCallback((order) => {
+    const id = String(order?.id || "");
+    if (!id) return;
+
+    Alert.alert("Delete order?", `Order ${order?.orderCode || id} will be removed.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          // UI delete (local)
+          setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
+        },
+      },
+    ]);
+  }, []);
 
   const filtered = useMemo(() => {
     const mapStatus = {
@@ -87,23 +82,28 @@ export default function OrdersListUI() {
     const q = query.trim().toLowerCase();
     const pickedPlacedDate = toYMD(placedDate);
 
-    const list = Array.isArray(orders) ? orders : [];
-
+    let list = Array.isArray(orders) ? orders : [];
 
     list = list.filter((o) => {
       const customerName = String(o?.customerName ?? "").toLowerCase();
       const orderId = String(o?.orderCode ?? o?.id ?? "").toLowerCase();
 
-
+      const textOk = !q || customerName.includes(q) || orderId.includes(q);
       const statusOk = status === "All" ? true : o?.status === mapStatus[status];
       const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
 
-      const placedOk = !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
+      // use backend field: orderDate (or placedDate if you really store that)
+      const dateValue = String(o?.orderDate ?? o?.placedDate ?? "");
+      const placedOk = !pickedPlacedDate ? true : dateValue === pickedPlacedDate;
 
       return textOk && statusOk && platformOk && placedOk;
     });
-  }, [orders, query, status, platform, placedDate]);
 
+    // optional sort by deadline
+    list = [...list].sort((a, b) => String(a?.deadline || "").localeCompare(String(b?.deadline || "")));
+
+    return list;
+  }, [orders, query, status, platform, placedDate, toYMD]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -136,22 +136,20 @@ export default function OrdersListUI() {
                 onPress={() => router.push(`/(main)/orders/${o.id}`)}
               />
 
-              {/* Delete button per order */}
-              <FloatingActionButton style={styles.floatbtn}
+              <FloatingActionButton
+                style={styles.floatbtn}
                 label="Delete"
                 icon="trash"
                 color="#DC2626"
                 onPress={() => onDelete(o)}
               />
             </View>
-
           ))}
         </View>
 
         <View style={{ height: 90 }} />
       </Screen>
-      {/* Add Order floating button */}
-connection
+
       <FloatingActionButton onPress={() => router.push("/(main)/orders/create")} />
     </View>
   );
@@ -162,5 +160,5 @@ const styles = StyleSheet.create({
   sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   list: { marginTop: 14, gap: 12 },
   itemWrap: { gap: 8 },
-  floatbtn:{position: "relative",alignSelf: "flex-end",}
+  floatbtn: { position: "relative", alignSelf: "flex-end" },
 });
