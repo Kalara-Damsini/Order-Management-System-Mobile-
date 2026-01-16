@@ -7,6 +7,7 @@ const MENU = [
   { label: "Dashboard", icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />, route: "/(main)/home" },
   { label: "Orders", icon: (c, s) => <MaterialCommunityIcons name="cart-outline" size={s} color={c} />, route: "/(main)/orders", badge: 3 },
   
+
 ];
 
 const UTILITY = [

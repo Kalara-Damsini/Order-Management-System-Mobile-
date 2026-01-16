@@ -1,16 +1,18 @@
+
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
+import { getOrdersApi } from "../../../features/orders/api/orders.api";
 import FloatingActionButton from "../../../features/orders/components/FloatingActionButton";
 import OrderCard from "../../../features/orders/components/OrderCard";
 import OrdersFilterBar from "../../../features/orders/components/OrdersFilterBar";
-import { mockOrders } from "../../../features/orders/data/mockOrders";
 import Screen from "../../../shared/components/Screen";
 import SearchBar from "../../../shared/components/SearchBar";
 
 export default function OrdersListUI() {
   const router = useRouter();
+
 
   // keep orders in state so delete can work
   const [orders, setOrders] = useState(() => (Array.isArray(mockOrders) ? mockOrders : []));
@@ -18,9 +20,11 @@ export default function OrdersListUI() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [platform, setPlatform] = useState("All");
+
   const [placedDate, setPlacedDate] = useState(null);
 
   const toYMD = (date) => {
+
     if (!date) return "";
     const d = new Date(date);
     const y = d.getFullYear();
@@ -44,6 +48,26 @@ export default function OrdersListUI() {
       },
     ]);
   };
+  }, []);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getOrdersApi(); // ✅ GET /orders
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (e) {
+      Alert.alert("Orders error", e?.message || "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ✅ This runs EVERY time you come back to this screen
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders])
+  );
 
   const filtered = useMemo(() => {
     const mapStatus = {
@@ -65,11 +89,12 @@ export default function OrdersListUI() {
 
     const list = Array.isArray(orders) ? orders : [];
 
-    return list.filter((o) => {
-      const customerName = String(o?.customerName ?? "").toLowerCase();
-      const orderId = String(o?.id ?? "").toLowerCase();
 
-      const textOk = !q || customerName.includes(q) || orderId.includes(q);
+    list = list.filter((o) => {
+      const customerName = String(o?.customerName ?? "").toLowerCase();
+      const orderId = String(o?.orderCode ?? o?.id ?? "").toLowerCase();
+
+
       const statusOk = status === "All" ? true : o?.status === mapStatus[status];
       const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
 
@@ -79,16 +104,19 @@ export default function OrdersListUI() {
     });
   }, [orders, query, status, platform, placedDate]);
 
+
   return (
     <View style={{ flex: 1 }}>
       <Screen>
         <Text style={styles.title}>Orders</Text>
-        <Text style={styles.sub}>Filter orders by placed date</Text>
+        <Text style={styles.sub}>
+          {loading ? "Loading orders..." : "Filter orders by placed date"}
+        </Text>
 
         <SearchBar
           value={query}
           onChangeText={setQuery}
-          placeholder="Search by customer or order id..."
+          placeholder="Search by customer or order code..."
         />
 
         <OrdersFilterBar
@@ -116,13 +144,14 @@ export default function OrdersListUI() {
                 onPress={() => onDelete(o)}
               />
             </View>
+
           ))}
         </View>
 
         <View style={{ height: 90 }} />
       </Screen>
-
       {/* Add Order floating button */}
+connection
       <FloatingActionButton onPress={() => router.push("/(main)/orders/create")} />
     </View>
   );
