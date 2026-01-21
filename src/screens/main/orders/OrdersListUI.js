@@ -18,8 +18,6 @@ export default function OrdersListUI() {
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // prevents double delete
   const [deletingId, setDeletingId] = useState(null);
 
   const [query, setQuery] = useState("");
@@ -66,10 +64,10 @@ export default function OrdersListUI() {
       try {
         setDeletingId(id);
 
-        // ✅ call backend delete
+        // ✅ delete from backend
         await deleteOrderApi(id);
 
-        // ✅ update UI after success
+        // ✅ remove from UI
         setOrders((prev) => prev.filter((o) => getId(o) !== id));
       } catch (e) {
         Alert.alert(
@@ -83,6 +81,7 @@ export default function OrdersListUI() {
     [deletingId, getId],
   );
 
+  // ✅ ONLY ONE onDelete (no duplicates)
   const onDelete = useCallback(
     (order) => {
       const id = getId(order);
@@ -103,27 +102,6 @@ export default function OrdersListUI() {
     },
     [getId, performDelete],
   );
-
-  const onDelete = useCallback((order) => {
-    const id = String(order?.id || "");
-    if (!id) return;
-
-    Alert.alert(
-      "Delete order?",
-      `Order ${order?.orderCode || id} will be removed.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // UI delete (local)
-            setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
-          },
-        },
-      ],
-    );
-  }, []);
 
   const filtered = useMemo(() => {
     const mapStatus = {
@@ -148,6 +126,7 @@ export default function OrdersListUI() {
     list = list.filter((o) => {
       const customerName = String(o?.customerName ?? "").toLowerCase();
       const orderIdText = String(o?.orderCode ?? getId(o) ?? "").toLowerCase();
+
       const textOk = !q || customerName.includes(q) || orderIdText.includes(q);
       const statusOk =
         status === "All" ? true : String(o?.status ?? "") === mapStatus[status];
@@ -156,7 +135,7 @@ export default function OrdersListUI() {
           ? true
           : String(o?.platform ?? "") === mapPlatform[platform];
 
-      // ✅ change placedDate -> orderDate if your backend uses orderDate
+      // if backend uses orderDate, change o?.placedDate -> o?.orderDate
       const placedOk = !pickedPlacedDate
         ? true
         : toYMD(o?.placedDate) === pickedPlacedDate;
@@ -227,12 +206,12 @@ export default function OrdersListUI() {
 
         <View style={{ height: 90 }} />
       </Screen>
+
       <FloatingActionButton
         label="Add Order"
         icon="add"
-        onPress={() => router.push("/(main)/orders/create")}
+        onPress={() => router.push("/orders/create")} // ✅ safer route
       />
-      connection
     </View>
   );
 }

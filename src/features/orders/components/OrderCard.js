@@ -1,15 +1,19 @@
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import StatusTag from "./StatusTag"; // ✅ use your existing colored status component
+
+import PlatformIcon from "./PlatformIcon";
+import StatusTag from "./StatusTag";
 
 export default function OrderCard({ order, onPress, rightAction }) {
-  const balance = useMemo(
-    () => Math.max(0, (order?.total || 0) - (order?.advance || 0)),
-    [order],
-  );
+  const balance = useMemo(() => {
+    const total = Number(order?.total ?? 0);
+    const advance = Number(order?.advance ?? 0);
+    return Math.max(0, total - advance);
+  }, [order]);
 
   return (
     <View style={styles.card}>
-      {/* ✅ press area for opening details */}
+      {/* press area for opening details */}
       <Pressable style={styles.pressArea} onPress={onPress}>
         <View style={styles.topRow}>
           <View style={styles.left}>
@@ -34,7 +38,7 @@ export default function OrderCard({ order, onPress, rightAction }) {
         </View>
       </Pressable>
 
-      {/* ✅ delete icon visible here */}
+      {/* delete icon visible here */}
       {rightAction ? <View style={styles.action}>{rightAction}</View> : null}
     </View>
   );
@@ -49,7 +53,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
   },
-  // ✅ gives space so the delete icon doesn't cover text
+
+  // gives space so the delete icon doesn't cover right-side content
   pressArea: {
     paddingRight: 46,
   },
@@ -62,7 +67,7 @@ const styles = StyleSheet.create({
   deadline: { fontSize: 12, color: "#6B7280", fontWeight: "700" },
   balance: { fontSize: 12, color: "#111827", fontWeight: "900" },
 
-  // ✅ bottom-right delete button position
+  // bottom-right delete button position
   action: {
     position: "absolute",
     right: 10,
