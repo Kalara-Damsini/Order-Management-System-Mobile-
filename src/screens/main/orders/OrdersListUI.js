@@ -26,11 +26,8 @@ export default function OrdersListUI() {
   const [status, setStatus] = useState("All");
   const [platform, setPlatform] = useState("All");
   const [placedDate, setPlacedDate] = useState(null);
-<<<<<<< HEAD
-=======
 
   const getId = useCallback((o) => String(o?.id ?? o?._id ?? ""), []);
->>>>>>> connection
 
   const toYMD = useCallback((date) => {
     if (!date) return "";
@@ -111,17 +108,21 @@ export default function OrdersListUI() {
     const id = String(order?.id || "");
     if (!id) return;
 
-    Alert.alert("Delete order?", `Order ${order?.orderCode || id} will be removed.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          // UI delete (local)
-          setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
+    Alert.alert(
+      "Delete order?",
+      `Order ${order?.orderCode || id} will be removed.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            // UI delete (local)
+            setOrders((prev) => prev.filter((o) => String(o?.id) !== id));
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, []);
 
   const filtered = useMemo(() => {
@@ -147,15 +148,6 @@ export default function OrdersListUI() {
     list = list.filter((o) => {
       const customerName = String(o?.customerName ?? "").toLowerCase();
       const orderIdText = String(o?.orderCode ?? getId(o) ?? "").toLowerCase();
-
-<<<<<<< HEAD
-      const textOk = !q || customerName.includes(q) || orderId.includes(q);
-      const statusOk = status === "All" ? true : o?.status === mapStatus[status];
-      const platformOk = platform === "All" ? true : o?.platform === mapPlatform[platform];
-      const placedOk =
-        !pickedPlacedDate ? true : String(o?.placedDate ?? "") === pickedPlacedDate;
-
-=======
       const textOk = !q || customerName.includes(q) || orderIdText.includes(q);
       const statusOk =
         status === "All" ? true : String(o?.status ?? "") === mapStatus[status];
@@ -168,19 +160,13 @@ export default function OrdersListUI() {
       const placedOk = !pickedPlacedDate
         ? true
         : toYMD(o?.placedDate) === pickedPlacedDate;
->>>>>>> connection
 
       return textOk && statusOk && platformOk && placedOk;
     });
 
-<<<<<<< HEAD
-    // optional sort by deadline
-    list = [...list].sort((a, b) => String(a?.deadline || "").localeCompare(String(b?.deadline || "")));
-=======
     list = [...list].sort((a, b) =>
       String(a?.deadline || "").localeCompare(String(b?.deadline || "")),
     );
->>>>>>> connection
 
     return list;
   }, [orders, query, status, platform, placedDate, toYMD, getId]);
@@ -209,25 +195,6 @@ export default function OrdersListUI() {
         />
 
         <View style={styles.list}>
-<<<<<<< HEAD
-          {filtered.map((o) => (
-
-            <OrderCard
-              key={String(o.id)}
-              order={o}
-              onPress={() => router.push(`/(main)/orders/${o.id}`)}
-              rightAction={
-                <FloatingActionButton
-                  label="" // icon only
-                  icon="trash"
-                  color="#DC2626"
-                  onPress={() => onDelete(o)}
-                  style={styles.deleteInsideCardBtn}
-                />
-              }
-            />
-          ))}
-=======
           {!loading && filtered.length === 0 ? (
             <Text style={styles.empty}>No orders found.</Text>
           ) : null}
@@ -256,26 +223,16 @@ export default function OrdersListUI() {
               />
             );
           })}
->>>>>>> connection
         </View>
 
         <View style={{ height: 90 }} />
       </Screen>
-
-<<<<<<< HEAD
-
-      {/* Add Order floating button */}
-=======
->>>>>>> connection
       <FloatingActionButton
         label="Add Order"
         icon="add"
         onPress={() => router.push("/(main)/orders/create")}
       />
-<<<<<<< HEAD
-
-=======
->>>>>>> connection
+      connection
     </View>
   );
 }
@@ -284,19 +241,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "900", marginBottom: 4 },
   sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
   list: { marginTop: 14, gap: 12 },
-<<<<<<< HEAD
-
-
-  // makes the FAB behave like a small icon button INSIDE the card
-  deleteInsideCardBtn: {
-    position: "relative",
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    elevation: 0,
-=======
   empty: { marginTop: 12, color: "#6B7280", fontWeight: "700" },
 
   iconBtn: {
@@ -308,6 +252,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF2F2",
     borderWidth: 1,
     borderColor: "#FECACA",
->>>>>>> connection
   },
 });
