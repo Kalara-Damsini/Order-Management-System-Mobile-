@@ -14,7 +14,9 @@ export async function httpGet(path, options = {}) {
   const { auth = true } = options;
 
   if (!API_BASE_URL) {
-    throw new Error("API_BASE_URL is undefined. Fix shared/config/env.js and restart Metro (expo start -c).");
+    throw new Error(
+      "API_BASE_URL is undefined. Fix shared/config/env.js and restart Metro (expo start -c).",
+    );
   }
   if (typeof path !== "string" || !path.length) {
     throw new Error("Invalid API path (empty).");
@@ -37,7 +39,7 @@ export async function httpGet(path, options = {}) {
   } catch (err) {
     console.error("NETWORK ERROR:", err);
     throw new Error(
-      "Network request failed. If using a real phone, don't use localhost—use your PC IP (e.g., http://192.168.x.x:3000)."
+      "Network request failed. If using a real phone, don't use localhost—use your PC IP (e.g., http://192.168.x.x:3000).",
     );
   }
 
@@ -49,7 +51,9 @@ export async function httpGet(path, options = {}) {
 
   if (!res.ok) {
     const msg =
-      (Array.isArray(data?.message) ? data.message.join("\n") : data?.message) ||
+      (Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message) ||
       (data?.raw ? String(data.raw) : null) ||
       `Request failed (${res.status})`;
     throw new Error(msg);
@@ -62,7 +66,9 @@ export async function httpPost(path, body, options = {}) {
   const { auth = true } = options;
 
   if (!API_BASE_URL) {
-    throw new Error("API_BASE_URL is undefined. Fix shared/config/env.js and restart Metro (expo start -c).");
+    throw new Error(
+      "API_BASE_URL is undefined. Fix shared/config/env.js and restart Metro (expo start -c).",
+    );
   }
   if (typeof path !== "string" || !path.length) {
     throw new Error("Invalid API path (empty).");
@@ -87,7 +93,7 @@ export async function httpPost(path, body, options = {}) {
   } catch (err) {
     console.error("NETWORK ERROR:", err);
     throw new Error(
-      "Network request failed. If using a real phone, don't use localhost—use your PC IP (e.g., http://192.168.x.x:3000)."
+      "Network request failed. If using a real phone, don't use localhost—use your PC IP (e.g., http://192.168.x.x:3000).",
     );
   }
 
@@ -99,7 +105,9 @@ export async function httpPost(path, body, options = {}) {
 
   if (!res.ok) {
     const msg =
-      (Array.isArray(data?.message) ? data.message.join("\n") : data?.message) ||
+      (Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message) ||
       (typeof data === "string" ? data : null) ||
       `Request failed (${res.status})`;
     throw new Error(msg);
@@ -108,12 +116,15 @@ export async function httpPost(path, body, options = {}) {
   return data;
 }
 
-
 export async function httpPatch(path, body, options = {}) {
   const { auth = true } = options;
 
-  if (!API_BASE_URL) throw new Error("API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).");
-  if (typeof path !== "string" || !path.length) throw new Error("Invalid API path (empty).");
+  if (!API_BASE_URL)
+    throw new Error(
+      "API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).",
+    );
+  if (typeof path !== "string" || !path.length)
+    throw new Error("Invalid API path (empty).");
 
   const token = auth ? await AsyncStorage.getItem("accessToken") : null;
   const url = joinUrl(API_BASE_URL, path);
@@ -133,7 +144,9 @@ export async function httpPatch(path, body, options = {}) {
     });
   } catch (err) {
     console.error("NETWORK ERROR:", err);
-    throw new Error("Network request failed. Check API_BASE_URL and backend running.");
+    throw new Error(
+      "Network request failed. Check API_BASE_URL and backend running.",
+    );
   }
 
   const text = await res.text();
@@ -144,7 +157,9 @@ export async function httpPatch(path, body, options = {}) {
 
   if (!res.ok) {
     const msg =
-      (Array.isArray(data?.message) ? data.message.join("\n") : data?.message) ||
+      (Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message) ||
       (data?.raw ? String(data.raw) : null) ||
       `Request failed (${res.status})`;
     throw new Error(msg);
@@ -156,8 +171,12 @@ export async function httpPatch(path, body, options = {}) {
 export async function httpDelete(path, options = {}) {
   const { auth = true } = options;
 
-  if (!API_BASE_URL) throw new Error("API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).");
-  if (typeof path !== "string" || !path.length) throw new Error("Invalid API path (empty).");
+  if (!API_BASE_URL)
+    throw new Error(
+      "API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).",
+    );
+  if (typeof path !== "string" || !path.length)
+    throw new Error("Invalid API path (empty).");
 
   const token = auth ? await AsyncStorage.getItem("accessToken") : null;
   const url = joinUrl(API_BASE_URL, path);
@@ -175,10 +194,25 @@ export async function httpDelete(path, options = {}) {
     });
   } catch (err) {
     console.error("NETWORK ERROR:", err);
-    throw new Error("Network request failed. Check API_BASE_URL and backend running.");
+    throw new Error(
+      "Network request failed. Check API_BASE_URL and backend running.",
+    );
   }
 
+  // ✅ handle No Content
+  if (res.status === 204) {
+    console.log("DELETE STATUS =", res.status, "(No Content)");
+    return { success: true };
+  }
+
+  // ✅ handle possible empty body even with 200
   const text = await res.text();
+  if (!text) {
+    console.log("DELETE STATUS =", res.status, "(Empty Body)");
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    return { success: true };
+  }
+
   const data = safeJson(text);
 
   console.log("DELETE STATUS =", res.status);
@@ -186,13 +220,16 @@ export async function httpDelete(path, options = {}) {
 
   if (!res.ok) {
     const msg =
-      (Array.isArray(data?.message) ? data.message.join("\n") : data?.message) ||
+      (Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message) ||
       (data?.raw ? String(data.raw) : null) ||
+      (typeof data === "string" ? data : null) ||
       `Request failed (${res.status})`;
     throw new Error(msg);
   }
 
-  return data;
+  return data ?? { success: true };
 }
 
 // For uploading proof images (FormData)
@@ -200,8 +237,12 @@ export async function httpDelete(path, options = {}) {
 export async function httpPostMultipart(path, formData, options = {}) {
   const { auth = true } = options;
 
-  if (!API_BASE_URL) throw new Error("API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).");
-  if (typeof path !== "string" || !path.length) throw new Error("Invalid API path (empty).");
+  if (!API_BASE_URL)
+    throw new Error(
+      "API_BASE_URL is undefined. Fix env and restart Metro (expo start -c).",
+    );
+  if (typeof path !== "string" || !path.length)
+    throw new Error("Invalid API path (empty).");
 
   const token = auth ? await AsyncStorage.getItem("accessToken") : null;
   const url = joinUrl(API_BASE_URL, path);
@@ -220,7 +261,9 @@ export async function httpPostMultipart(path, formData, options = {}) {
     });
   } catch (err) {
     console.error("NETWORK ERROR:", err);
-    throw new Error("Network request failed. Check API_BASE_URL and backend running.");
+    throw new Error(
+      "Network request failed. Check API_BASE_URL and backend running.",
+    );
   }
 
   const text = await res.text();
@@ -231,7 +274,9 @@ export async function httpPostMultipart(path, formData, options = {}) {
 
   if (!res.ok) {
     const msg =
-      (Array.isArray(data?.message) ? data.message.join("\n") : data?.message) ||
+      (Array.isArray(data?.message)
+        ? data.message.join("\n")
+        : data?.message) ||
       (data?.raw ? String(data.raw) : null) ||
       `Request failed (${res.status})`;
     throw new Error(msg);
@@ -244,7 +289,7 @@ function safeJson(text) {
   if (text == null || text === "") return null;
   try {
     return JSON.parse(text);
-  // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     // If response is not valid JSON, return raw text for higher-level handling
     return text;

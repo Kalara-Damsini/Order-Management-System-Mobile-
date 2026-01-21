@@ -6,7 +6,6 @@ import OrderForm from "../../../features/orders/components/OrderForm";
 import AppButton from "../../../shared/components/AppButton";
 import Screen from "../../../shared/components/Screen";
 
-
 function toYMD(date) {
   if (!date) return "";
   const d = new Date(date);
@@ -47,15 +46,22 @@ export default function OrderCreateUI() {
   };
 
   const onSave = async () => {
-    if (!values.customerName.trim()) return Alert.alert("Missing", "Customer name is required");
-    if (!values.mobileNo.trim()) return Alert.alert("Missing", "Mobile number is required");
-    if (!values.address.trim()) return Alert.alert("Missing", "Address is required");
-    if (!values.productName.trim()) return Alert.alert("Missing", "Product / Service is required");
-    if (!values.orderDate) return Alert.alert("Missing", "Order date is required");
-    if (!values.deadline) return Alert.alert("Missing", "Deadline date is required");
+    if (!values.customerName.trim())
+      return Alert.alert("Missing", "Customer name is required");
+    if (!values.mobileNo.trim())
+      return Alert.alert("Missing", "Mobile number is required");
+    if (!values.address.trim())
+      return Alert.alert("Missing", "Address is required");
+    if (!values.productName.trim())
+      return Alert.alert("Missing", "Product / Service is required");
+    if (!values.orderDate)
+      return Alert.alert("Missing", "Order date is required");
+    if (!values.deadline)
+      return Alert.alert("Missing", "Deadline date is required");
     if (!values.total) return Alert.alert("Missing", "Total price is required");
     if (!values.advance) return Alert.alert("Missing", "Advance is required");
-    if (!values.description.trim()) return Alert.alert("Missing", "Description is required");
+    if (!values.description.trim())
+      return Alert.alert("Missing", "Description is required");
 
     const payload = {
       customerName: values.customerName.trim(),
@@ -96,7 +102,10 @@ export default function OrderCreateUI() {
       </Screen>
 
       <View style={styles.sticky}>
-        <AppButton title={loading ? "Saving..." : "Save Order"} onPress={onSave} />
+        <AppButton
+          title={loading ? "Saving..." : "Save Order"}
+          onPress={onSave}
+        />
       </View>
     </View>
   );
