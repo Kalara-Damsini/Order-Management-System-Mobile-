@@ -1,7 +1,11 @@
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { getOrderApi, updateOrderApi, uploadOrderProofApi } from "../../../features/orders/api/orders.api";
+import {
+  getOrderApi,
+  updateOrderApi,
+  uploadOrderProofApi,
+} from "../../../features/orders/api/orders.api";
 import PlatformIcon from "../../../features/orders/components/PlatformIcon";
 import StatusTag from "../../../features/orders/components/StatusTag";
 import UploadProofBox from "../../../features/orders/components/UploadProofBox";
@@ -55,19 +59,18 @@ export default function OrderDetailsUI() {
   }, [order]);
 
   const uploadProof = async (assets) => {
-  try {
-    if (!id) return;
-    setLoading(true);
-    await uploadOrderProofApi(String(id), assets);
-    Alert.alert("Success", "Proof uploaded!");
-    await load(); // reload order to show proof URLs if backend returns them
-  } catch (e) {
-    Alert.alert("Upload failed", e.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+    try {
+      if (!id) return;
+      setLoading(true);
+      await uploadOrderProofApi(String(id), assets);
+      Alert.alert("Success", "Proof uploaded!");
+      await load(); // reload order to show proof URLs if backend returns them
+    } catch (e) {
+      Alert.alert("Upload failed", e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const setStatus = async (newStatus) => {
     try {
@@ -103,13 +106,22 @@ export default function OrderDetailsUI() {
         <View style={styles.statusRow}>
           <StatusTag status={order.status} />
           <View style={styles.statusBtns}>
-            <Pressable style={styles.smallBtn} onPress={() => setStatus("pending")}>
+            <Pressable
+              style={styles.smallBtn}
+              onPress={() => setStatus("pending")}
+            >
               <Text style={styles.smallBtnText}>Pending</Text>
             </Pressable>
-            <Pressable style={styles.smallBtn} onPress={() => setStatus("in_progress")}>
+            <Pressable
+              style={styles.smallBtn}
+              onPress={() => setStatus("in_progress")}
+            >
               <Text style={styles.smallBtnText}>In Progress</Text>
             </Pressable>
-            <Pressable style={styles.smallBtn} onPress={() => setStatus("completed")}>
+            <Pressable
+              style={styles.smallBtn}
+              onPress={() => setStatus("completed")}
+            >
               <Text style={styles.smallBtnText}>Completed</Text>
             </Pressable>
           </View>
@@ -131,8 +143,14 @@ export default function OrderDetailsUI() {
       </Section>
 
       <Section title="Payments">
-        <Row label="Total" value={`LKR ${Number(order.total || 0).toLocaleString()}`} />
-        <Row label="Advance" value={`LKR ${Number(order.advance || 0).toLocaleString()}`} />
+        <Row
+          label="Total"
+          value={`LKR ${Number(order.total || 0).toLocaleString()}`}
+        />
+        <Row
+          label="Advance"
+          value={`LKR ${Number(order.advance || 0).toLocaleString()}`}
+        />
         <Row label="Balance" value={`LKR ${balance.toLocaleString()}`} />
       </Section>
 
@@ -154,7 +172,12 @@ export default function OrderDetailsUI() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "900", color: "#111827", marginBottom: 14 },
+  title: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#111827",
+    marginBottom: 14,
+  },
 
   section: {
     borderWidth: 1,
@@ -180,7 +203,13 @@ const styles = StyleSheet.create({
     borderTopColor: "#F3F4F6",
   },
   rowLabel: { fontSize: 12, fontWeight: "800", color: "#6B7280" },
-  rowValue: { fontSize: 13, fontWeight: "900", color: "#111827", flexShrink: 1, textAlign: "right" },
+  rowValue: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#111827",
+    flexShrink: 1,
+    textAlign: "right",
+  },
 
   platformValue: { flexDirection: "row", alignItems: "center", gap: 8 },
 
