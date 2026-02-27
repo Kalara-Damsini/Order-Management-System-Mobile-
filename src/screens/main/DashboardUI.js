@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -7,7 +7,6 @@ import { getMyProfileApi } from "../../features/auth/api/auth.api";
 import { getOrdersApi } from "../../features/orders/api/orders.api";
 
 export default function DashboardUI() {
-  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);

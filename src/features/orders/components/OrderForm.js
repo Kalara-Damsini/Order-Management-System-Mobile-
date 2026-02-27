@@ -3,9 +3,26 @@ import AppInput from "../../../shared/components/AppInput";
 import DateField from "../../../shared/components/DateField";
 import Dropdown from "../../../shared/components/Dropdown";
 
+const PLATFORM_OPTIONS = [
+  { label: "Instagram", value: "instagram" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "Facebook", value: "facebook" },
+  { label: "Website", value: "website" },
+];
 
-export default function OrderForm({ values = {}, safeValues = {}, onChange, onPressPlatform }) {
+// Dropdown expects a list of strings
+const PLATFORM_LABELS = PLATFORM_OPTIONS.map((p) => p.label);
+
+export default function OrderForm({ values = {}, safeValues = {}, onChange }) {
   const set = (key) => (val) => onChange?.(key, val);
+
+  const onPlatformChange = (selectedLabel) => {
+    const selected = PLATFORM_OPTIONS.find((p) => p.label === selectedLabel);
+    if (!selected) return;
+
+    onChange?.("platformLabel", selected.label);
+    onChange?.("platform", selected.value);
+  };
 
   return (
     <View style={styles.form}>
@@ -60,7 +77,7 @@ export default function OrderForm({ values = {}, safeValues = {}, onChange, onPr
         <View style={{ flex: 1 }}>
           <DateField
             label="Order Date"
-            value={safeValues.orderDate}
+            value={values.orderDate}
             onChange={set("orderDate")}
           />
         </View>
@@ -68,19 +85,19 @@ export default function OrderForm({ values = {}, safeValues = {}, onChange, onPr
         <View style={{ flex: 1 }}>
           <DateField
             label="Deadline Date"
-            value={safeValues.deadline}
+            value={values.deadline}
             onChange={set("deadline")}
           />
         </View>
       </View>
 
-      {/* Platform Dropdown */}
+      {/* ✅ Platform Dropdown (NOW WORKING) */}
       <Dropdown
         label="Platform"
         value={values.platformLabel}
-        onPress={onPressPlatform}
         placeholder="Select a platform"
-
+        options={PLATFORM_LABELS}
+        onChange={onPlatformChange}
       />
 
       <View style={styles.divider} />
@@ -140,7 +157,6 @@ export default function OrderForm({ values = {}, safeValues = {}, onChange, onPr
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   form: { gap: 6 },
