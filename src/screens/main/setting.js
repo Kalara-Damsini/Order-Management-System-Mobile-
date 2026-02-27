@@ -12,7 +12,7 @@ import {
     Text,
     View
 } from "react-native";
-
+import { useTheme } from "../../shared/theme/ThemeContext.js";
 
 import {
     getMyProfileApi,
@@ -22,28 +22,18 @@ import {
 
 import AppButton from "../../shared/components/AppButton.js";
 import AppInput from "../../shared/components/AppInput.js";
+import Dropdown from "../../shared/components/Dropdown.js";
 import Screen from "../../shared/components/Screen.js";
-
-const DEFAULT_PLATFORM_KEY = "defaultPlatform";
-
-const PLATFORM_OPTIONS = [
-    { label: "Instagram", value: "instagram" },
-    { label: "WhatsApp", value: "whatsapp" },
-    { label: "Facebook", value: "facebook" },
-    { label: "Website", value: "website" },
-];
-const PLATFORM_LABELS = PLATFORM_OPTIONS.map((p) => p.label);
 
 function initialLetter(name) {
     const n = String(name || "").trim();
     return n ? n[0].toUpperCase() : "?";
 }
-function labelFromValue(v) {
-    return PLATFORM_OPTIONS.find((x) => x.value === v)?.label || "Instagram";
-}
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const { mode, changeTheme, theme } = useTheme();
+    const themeLabel = mode === "system" ? "System" : mode === "dark" ? "Dark" : "Light";
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -51,7 +41,6 @@ export default function SettingsScreen() {
 
     const [profile, setProfile] = useState(null);
     const [shopName, setShopName] = useState("");
-    const [defaultPlatformLabel, setDefaultPlatformLabel] = useState("Instagram");
 
     const loadAll = useCallback(async () => {
         try {
@@ -60,9 +49,7 @@ export default function SettingsScreen() {
             const me = await getMyProfileApi();
             setProfile(me);
             setShopName(me?.shopName || "");
-
-            const saved = await AsyncStorage.getItem(DEFAULT_PLATFORM_KEY);
-            setDefaultPlatformLabel(saved ? labelFromValue(saved) : "Instagram");
+        
         } catch (e) {
             Alert.alert("Settings error", e?.message || "Failed to load settings");
         } finally {
@@ -96,7 +83,7 @@ export default function SettingsScreen() {
             setSaving(true);
             const updated = await updateMyProfileApi({ shopName: next });
             setProfile(updated);
-            DeviceEventEmitter.emit("profile.updated"); // ✅ refresh drawer header
+            DeviceEventEmitter.emit("profile.updated");
             Alert.alert("Saved", "Profile updated");
         } catch (e) {
             Alert.alert("Save failed", e?.message || "Could not update profile");
@@ -130,21 +117,13 @@ export default function SettingsScreen() {
             const me = await getMyProfileApi();
             setProfile(me);
 
-            DeviceEventEmitter.emit("profile.updated"); // ✅ refresh drawer
+            DeviceEventEmitter.emit("profile.updated"); // refresh drawer
             Alert.alert("Updated", "Profile picture updated");
         } catch (e) {
             Alert.alert("Upload failed", e?.message || "Could not upload avatar");
         } finally {
             setUploading(false);
         }
-    };
-
-    const onChangeDefaultPlatform = async (label) => {
-        setDefaultPlatformLabel(label);
-        const value =
-            PLATFORM_OPTIONS.find((p) => p.label === label)?.value || "instagram";
-        await AsyncStorage.setItem(DEFAULT_PLATFORM_KEY, value);
-        Alert.alert("Saved", `Default platform set to ${label}`);
     };
 
     const onLogout = async () => {
@@ -192,6 +171,21 @@ export default function SettingsScreen() {
                                 Tap avatar to {uploading ? "uploading..." : "change photo"}
                             </Text>
                         </View>
+                    </View>
+
+                    {/* Appearance (Theme) */}
+                    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.cardTitle, { color: theme.text }]}>Appearance</Text>
+
+                        <Dropdown
+                            label="Theme"
+                            value={themeLabel}
+                            options={["Light", "Dark", "System"]}
+                            onChange={(val) => {
+                                const map = { Light: "light", Dark: "dark", System: "system" };
+                                changeTheme(map[val] || "system");
+                            }}
+                        />
                     </View>
 
                     <AppInput
