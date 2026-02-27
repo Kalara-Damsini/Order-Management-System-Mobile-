@@ -17,12 +17,11 @@ import { getOrdersApi } from "../../features/orders/api/orders.api";
 
 const MENU = [
   { label: "Dashboard", icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />, route: "/(main)/home" },
-  { label: "Profile", icon: (c, s) => <Ionicons name="person-outline" size={s} color={c} />, route: "/(main)/profile" },
   { label: "Orders", icon: (c, s) => <MaterialCommunityIcons name="cart-outline" size={s} color={c} />, route: "/(main)/orders" },
 ];
 
 const UTILITY = [
-  { label: "Settings", icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />, route: "/(main)/settings" },
+  { label: "Settings", icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />, route: "/(main)/setting" }, ,
   { label: "Help & Support", icon: (c, s) => <Feather name="help-circle" size={s} color={c} />, route: "/(main)/help" },
 ];
 
