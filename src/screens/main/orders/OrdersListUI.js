@@ -1,12 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-
 import {
-  deleteOrderApi,
-  getOrdersApi,
-} from "../../../features/orders/api/orders.api";
+  Alert,
+  DeviceEventEmitter,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import { deleteOrderApi, getOrdersApi } from "../../../features/orders/api/orders.api";
 import FloatingActionButton from "../../../features/orders/components/FloatingActionButton";
 import OrderCard from "../../../features/orders/components/OrderCard";
 import OrdersFilterBar from "../../../features/orders/components/OrdersFilterBar";
@@ -37,23 +41,41 @@ export default function OrdersListUI() {
     return `${y}-${m}-${dd}`;
   }, []);
 
+  // ✅ emit count excluding completed (drawer badge)
+  const emitOrdersCount = useCallback((list) => {
+    const arr = Array.isArray(list) ? list : [];
+    const count = arr.filter(
+      (o) => String(o?.status || "").toLowerCase().trim() !== "completed"
+    ).length;
+
+    console.log("ORDERS COUNT EMIT =", count);
+    DeviceEventEmitter.emit("orders.count", count);
+  }, []);
+
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getOrdersApi();
-      setOrders(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setOrders(list);
+
+      // ✅ update drawer badge
+      emitOrdersCount(list);
     } catch (e) {
       Alert.alert("Orders error", e?.message || "Failed to load orders");
       setOrders([]);
+
+      // ✅ update drawer badge -> 0
+      emitOrdersCount([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [emitOrdersCount]);
 
   useFocusEffect(
     useCallback(() => {
       loadOrders();
-    }, [loadOrders]),
+    }, [loadOrders])
   );
 
   const performDelete = useCallback(
@@ -67,21 +89,21 @@ export default function OrdersListUI() {
         // ✅ delete from backend
         await deleteOrderApi(id);
 
-        // ✅ remove from UI
-        setOrders((prev) => prev.filter((o) => getId(o) !== id));
+        // ✅ remove from UI + update badge count
+        setOrders((prev) => {
+          const next = prev.filter((o) => getId(o) !== id);
+          emitOrdersCount(next);
+          return next;
+        });
       } catch (e) {
-        Alert.alert(
-          "Delete failed",
-          e?.message || "Could not delete this order",
-        );
+        Alert.alert("Delete failed", e?.message || "Could not delete this order");
       } finally {
         setDeletingId(null);
       }
     },
-    [deletingId, getId],
+    [deletingId, getId, emitOrdersCount]
   );
 
-  // ✅ ONLY ONE onDelete (no duplicates)
   const onDelete = useCallback(
     (order) => {
       const id = getId(order);
@@ -97,10 +119,10 @@ export default function OrdersListUI() {
             style: "destructive",
             onPress: () => performDelete(order),
           },
-        ],
+        ]
       );
     },
-    [getId, performDelete],
+    [getId, performDelete]
   );
 
   const filtered = useMemo(() => {
@@ -128,8 +150,10 @@ export default function OrdersListUI() {
       const orderIdText = String(o?.orderCode ?? getId(o) ?? "").toLowerCase();
 
       const textOk = !q || customerName.includes(q) || orderIdText.includes(q);
+
       const statusOk =
         status === "All" ? true : String(o?.status ?? "") === mapStatus[status];
+
       const platformOk =
         platform === "All"
           ? true
@@ -144,7 +168,7 @@ export default function OrdersListUI() {
     });
 
     list = [...list].sort((a, b) =>
-      String(a?.deadline || "").localeCompare(String(b?.deadline || "")),
+      String(a?.deadline || "").localeCompare(String(b?.deadline || ""))
     );
 
     return list;
@@ -210,7 +234,7 @@ export default function OrdersListUI() {
       <FloatingActionButton
         label="Add Order"
         icon="add"
-        onPress={() => router.push("/orders/create")} // ✅ safer route
+        onPress={() => router.push("/(main)/orders/create")} //correct route
       />
     </View>
   );

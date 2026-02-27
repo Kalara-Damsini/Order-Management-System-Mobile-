@@ -11,42 +11,19 @@ import {
   Text,
   View,
 } from "react-native";
+
 import { getMyProfileApi } from "../../features/auth/api/auth.api";
+import { getOrdersApi } from "../../features/orders/api/orders.api";
 
 const MENU = [
-  {
-    label: "Dashboard",
-    icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />,
-    route: "/(main)/home",
-  },
-  {
-    label: "Profile",
-    icon: (c, s) => <Ionicons name="person-outline" size={s} color={c} />,
-    route: "/(main)/profile",
-  },
-  {
-    label: "Orders",
-    icon: (c, s) => (
-      <MaterialCommunityIcons name="cart-outline" size={s} color={c} />
-    ),
-    route: "/(main)/orders",
-    badge: 3,
-  },
+  { label: "Dashboard", icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />, route: "/(main)/home" },
+  { label: "Profile", icon: (c, s) => <Ionicons name="person-outline" size={s} color={c} />, route: "/(main)/profile" },
+  { label: "Orders", icon: (c, s) => <MaterialCommunityIcons name="cart-outline" size={s} color={c} />, route: "/(main)/orders" },
 ];
 
-// Keep these ONLY if you create routes:
-// app/(main)/settings.js and app/(main)/help.js
 const UTILITY = [
-  {
-    label: "Settings",
-    icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />,
-    route: "/(main)/settings",
-  },
-  {
-    label: "Help & Support",
-    icon: (c, s) => <Feather name="help-circle" size={s} color={c} />,
-    route: "/(main)/help",
-  },
+  { label: "Settings", icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />, route: "/(main)/settings" },
+  { label: "Help & Support", icon: (c, s) => <Feather name="help-circle" size={s} color={c} />, route: "/(main)/help" },
 ];
 
 function initialLetter(name) {
@@ -61,6 +38,9 @@ export default function DrawerContent(props) {
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
+  // badge count
+  const [ordersCount, setOrdersCount] = useState(0);
+
   const go = (route) => {
     props.navigation?.closeDrawer?.();
     router.push(route);
@@ -72,6 +52,9 @@ export default function DrawerContent(props) {
   const renderItem = (item) => {
     const active = isActive(item.route);
     const iconColor = active ? "#1677FF" : "#4B5563";
+
+    const badgeValue =
+      item.route === "/(main)/orders" ? ordersCount : item.badge;
 
     return (
       <Pressable
@@ -90,9 +73,9 @@ export default function DrawerContent(props) {
           </Text>
         </View>
 
-        {!!item.badge && (
+        {badgeValue > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
+            <Text style={styles.badgeText}>{badgeValue}</Text>
           </View>
         )}
       </Pressable>
@@ -103,7 +86,6 @@ export default function DrawerContent(props) {
     try {
       setLoadingProfile(true);
 
-      // token exists?
       const token = await AsyncStorage.getItem("accessToken");
       if (!token) {
         router.replace("/(auth)/login");
@@ -115,44 +97,71 @@ export default function DrawerContent(props) {
     } catch (e) {
       console.log("PROFILE ERROR:", e?.message);
 
-      // Logout ONLY on auth errors, not on 404/server/network errors
       const msg = String(e?.message || "");
       const isAuthError =
         msg.includes("401") ||
         msg.includes("403") ||
         msg.toLowerCase().includes("unauthorized");
 
-      if (isAuthError) {
-        router.replace("/(auth)/login");
-      } else {
-        setProfile(null);
-      }
+      if (isAuthError) router.replace("/(auth)/login");
+      else setProfile(null);
     } finally {
       setLoadingProfile(false);
     }
   }, [router]);
 
+  // This is the important part: Drawer calculates count itself
+  const loadOrdersCount = useCallback(async () => {
+    try {
+      const data = await getOrdersApi();
+      const list = Array.isArray(data) ? data : [];
+
+      // exclude completed (case-insensitive)
+      const count = list.filter(
+        (o) => String(o?.status || "").toLowerCase().trim() !== "completed"
+      ).length;
+
+      console.log("DRAWER ORDERS COUNT =", count);
+      setOrdersCount(count);
+    } catch (e) {
+      console.log("DRAWER ORDERS COUNT ERROR:", e?.message);
+      setOrdersCount(0);
+    }
+  }, []);
+
   // initial load
   useEffect(() => {
     loadProfile();
-  }, [loadProfile]);
+    loadOrdersCount();
+  }, [loadProfile, loadOrdersCount]);
 
-  // ✅ listen to profile updates from Profile screen
+  //refresh when drawer opens (VERY RELIABLE)
+  useEffect(() => {
+    const unsub = props.navigation?.addListener?.("drawerOpen", () => {
+      loadProfile();
+      loadOrdersCount();
+    });
+    return unsub;
+  }, [props.navigation, loadProfile, loadOrdersCount]);
+
+  // optional: also refresh when you emit
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("orders.updated", () => {
+      loadOrdersCount();
+    });
+    return () => sub.remove();
+  }, [loadOrdersCount]);
+
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener("profile.updated", () => {
       loadProfile();
     });
-
     return () => sub.remove();
   }, [loadProfile]);
 
-  // Values with fallbacks
   const fullName = profile?.fullName || (loadingProfile ? "Loading..." : "User");
   const shopName = profile?.shopName || "My Shop";
-
-  // Use FULL URL from API helper so image loads correctly
   const avatarUrl = profile?.avatarFullUrl || "";
-
   const email = profile?.email || "";
 
   const onLogout = async () => {
@@ -168,7 +177,6 @@ export default function DrawerContent(props) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatarWrap}>
             {avatarUrl ? (
@@ -184,22 +192,16 @@ export default function DrawerContent(props) {
           </View>
 
           <View style={styles.headerInfo}>
-            <Text style={styles.name} numberOfLines={1}>
-              {fullName}
-            </Text>
+            <Text style={styles.name} numberOfLines={1}>{fullName}</Text>
 
             <View style={styles.subRow}>
-              <Text style={styles.company} numberOfLines={1}>
-                {shopName}
-              </Text>
+              <Text style={styles.company} numberOfLines={1}>{shopName}</Text>
               <Text style={styles.dot}>•</Text>
               <Text style={styles.pro}>PRO</Text>
             </View>
 
             {!!email && (
-              <Text style={styles.email} numberOfLines={1}>
-                {email}
-              </Text>
+              <Text style={styles.email} numberOfLines={1}>{email}</Text>
             )}
           </View>
 
@@ -211,18 +213,15 @@ export default function DrawerContent(props) {
           </Pressable>
         </View>
 
-        {/* MAIN MENU */}
         <Text style={styles.sectionTitle}>MAIN MENU</Text>
         <View style={styles.section}>{MENU.map(renderItem)}</View>
 
-        {/* UTILITY */}
         <Text style={styles.sectionTitle}>UTILITY</Text>
         <View style={styles.section}>{UTILITY.map(renderItem)}</View>
 
         <View style={{ height: 30 }} />
       </DrawerContentScrollView>
 
-      {/* Bottom footer */}
       <View style={styles.bottom}>
         <Pressable onPress={onLogout} style={styles.logoutRow}>
           <Ionicons name="log-out-outline" size={20} color="#E11D48" />
@@ -239,52 +238,16 @@ export default function DrawerContent(props) {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderTopRightRadius: 22,
-    borderBottomRightRadius: 22,
-    overflow: "hidden",
-  },
+  root: { flex: 1, backgroundColor: "#FFFFFF", borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
   scrollContent: { paddingBottom: 10 },
 
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-
+  header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, flexDirection: "row", alignItems: "center", gap: 14 },
   avatarWrap: { width: 62, height: 62 },
-  avatar: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: "#E5E7EB",
-  },
-  avatarFallback: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  avatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: "#E5E7EB" },
+  avatarFallback: { width: 62, height: 62, borderRadius: 31, backgroundColor: "#E5E7EB", alignItems: "center", justifyContent: "center" },
   avatarLetter: { fontSize: 20, fontWeight: "900", color: "#111827" },
 
-  onlineDot: {
-    position: "absolute",
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#22C55E",
-    right: 2,
-    bottom: 2,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
+  onlineDot: { position: "absolute", width: 14, height: 14, borderRadius: 7, backgroundColor: "#22C55E", right: 2, bottom: 2, borderWidth: 2, borderColor: "#FFFFFF" },
 
   headerInfo: { flex: 1 },
   name: { fontSize: 20, fontWeight: "800", color: "#111827" },
@@ -294,71 +257,24 @@ const styles = StyleSheet.create({
   pro: { fontSize: 14, fontWeight: "700", color: "#1677FF" },
   email: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
 
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(17,24,39,0.06)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(17,24,39,0.06)", justifyContent: "center", alignItems: "center" },
 
-  sectionTitle: {
-    marginTop: 18,
-    marginBottom: 10,
-    paddingHorizontal: 20,
-    fontSize: 12,
-    letterSpacing: 1.2,
-    fontWeight: "800",
-    color: "#9CA3AF",
-  },
+  sectionTitle: { marginTop: 18, marginBottom: 10, paddingHorizontal: 20, fontSize: 12, letterSpacing: 1.2, fontWeight: "800", color: "#9CA3AF" },
   section: { paddingHorizontal: 14, gap: 10 },
 
-  item: {
-    height: 56,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+  item: { height: 56, borderRadius: 16, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   itemPressed: { opacity: 0.9 },
   itemActive: { backgroundColor: "#EAF3FF" },
-
   itemLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   itemText: { fontSize: 16, fontWeight: "600", color: "#374151" },
   itemTextActive: { color: "#1677FF" },
 
-  badge: {
-    minWidth: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#1677FF",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 8,
-  },
+  badge: { minWidth: 30, height: 30, borderRadius: 15, backgroundColor: "#1677FF", justifyContent: "center", alignItems: "center", paddingHorizontal: 8 },
   badgeText: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
 
-  bottom: {
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 16,
-  },
-  logoutRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-  },
+  bottom: { borderTopWidth: 1, borderTopColor: "#F3F4F6", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16 },
+  logoutRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
   logoutText: { fontSize: 16, fontWeight: "700", color: "#E11D48" },
-
-  metaRow: {
-    marginTop: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  metaRow: { marginTop: 8, flexDirection: "row", justifyContent: "space-between" },
   metaText: { fontSize: 12, color: "#9CA3AF" },
 });
