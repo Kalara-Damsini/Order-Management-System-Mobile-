@@ -4,7 +4,6 @@ import { API_BASE_URL } from "../../shared/config/env";
 function joinUrl(base, path) {
   if (!base) return path;
   if (!path) return base;
-  // Remove trailing slashes from base and leading slashes from path then join with a single slash
   const b = String(base).replace(/\/+$/g, "");
   const p = String(path).replace(/^\/+/g, "");
   return `${b}/${p}`;

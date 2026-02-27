@@ -15,24 +15,27 @@ function toYMD(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// Keep defaults in one place (so reset is clean)
+const initialValues = {
+  customerName: "",
+  mobileNo: "",
+  address: "",
+  productName: "",
+  orderDate: null,
+  deadline: null,
+  platform: "instagram",
+  platformLabel: "Instagram",
+  total: "",
+  advance: "",
+  description: "",
+  notes: "",
+};
+
 export default function OrderCreateUI() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const [values, setValues] = useState({
-    customerName: "",
-    mobileNo: "",
-    address: "",
-    productName: "",
-    orderDate: null,
-    deadline: null,
-    platform: "instagram",
-    platformLabel: "Instagram",
-    total: "",
-    advance: "",
-    description: "",
-    notes: "",
-  });
+  const [values, setValues] = useState(initialValues);
 
   const balance = useMemo(() => {
     const total = Number(values.total || 0);
@@ -43,6 +46,11 @@ export default function OrderCreateUI() {
 
   const onChange = (key, value) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // ✅ Reset helper
+  const resetForm = () => {
+    setValues(initialValues);
   };
 
   const onSave = async () => {
@@ -80,11 +88,19 @@ export default function OrderCreateUI() {
     try {
       setLoading(true);
       await createOrderApi(payload);
+
       Alert.alert("Success", "Order created!");
+
+      //Reset form AFTER successful save
+      resetForm();
+
+      // Option A: stay on page with empty form
+      // (do nothing else)
+
+      // Option B: go back to list (if you want)
       router.back();
     } catch (e) {
-      Alert.alert("Create failed", e.message);
-      console.log("createOrderApi:", typeof createOrderApi);
+      Alert.alert("Create failed", e?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -105,6 +121,7 @@ export default function OrderCreateUI() {
         <AppButton
           title={loading ? "Saving..." : "Save Order"}
           onPress={onSave}
+          disabled={loading}
         />
       </View>
     </View>

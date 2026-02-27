@@ -55,30 +55,6 @@ export default function OrderForm({ values = {}, safeValues = {}, onChange, onPr
         </View>
       </View>
 
-      <View style={styles.twoCol}>
-        <View style={{ flex: 1 }}>
-          <AppInput
-            label="Mobile No"
-            placeholder="e.g. 0771234567"
-            keyboardType="phone-pad"
-            value={safeValues.mobileNo}
-            onChangeText={set("mobileNo")}
-          />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <AppInput
-            label="Address"
-            placeholder="Enter delivery address"
-            value={safeValues.address}
-            onChangeText={set("address")}
-            multiline
-            numberOfLines={3}
-            styleOverride={{ height: 90, textAlignVertical: "top" }}
-          />
-        </View>
-      </View>
-
       {/* Dates */}
       <View style={styles.twoCol}>
         <View style={{ flex: 1 }}>
@@ -98,7 +74,7 @@ export default function OrderForm({ values = {}, safeValues = {}, onChange, onPr
         </View>
       </View>
 
-      {/* ✅ Platform Dropdown */}
+      {/* Platform Dropdown */}
       <Dropdown
         label="Platform"
         value={values.platformLabel}
