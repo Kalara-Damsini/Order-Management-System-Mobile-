@@ -1,14 +1,86 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { getMyProfileApi } from "../../features/auth/api/auth.api";
+import { getOrdersApi } from "../../features/orders/api/orders.api";
 
 export default function DashboardUI() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [orders, setOrders] = useState([]);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // load both in parallel
+      const [me, ordersRes] = await Promise.all([
+        getMyProfileApi(),
+        getOrdersApi(),
+      ]);
+
+      setProfile(me);
+      setOrders(Array.isArray(ordersRes) ? ordersRes : []);
+    } catch (e) {
+      console.log("DASHBOARD ERROR:", e?.message);
+      Alert.alert("Dashboard error", e?.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // refresh whenever dashboard screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, [loadDashboard])
+  );
+
+  // dynamic values
+  const fullName = profile?.fullName || "User";
+  const shopName = profile?.shopName || "My Shop";
+
+  const pendingTasks = useMemo(() => {
+    return (Array.isArray(orders) ? orders : []).filter(
+      (o) => String(o?.status || "").toLowerCase().trim() !== "completed"
+    ).length;
+  }, [orders]);
+
+  const completedTasks = useMemo(() => {
+    return (Array.isArray(orders) ? orders : []).filter(
+      (o) => String(o?.status || "").toLowerCase().trim() === "completed"
+    ).length;
+  }, [orders]);
+
+  const inProgressTasks = useMemo(() => {
+    return (Array.isArray(orders) ? orders : []).filter((o) => {
+      const s = String(o?.status || "").toLowerCase().trim();
+
+      // supports: "in_progress" OR "in progress"
+      return s === "in_progress" || s === "in progress";
+    }).length;
+  }, [orders]);
+
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good Morning,";
+    if (h < 18) return "Good Afternoon,";
+    return "Good Evening,";
+  }, []);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.welcome}>Good Morning,</Text>
-          <Text style={styles.name}>Alex 👋</Text>
+          <Text style={styles.welcome}>{greeting}</Text>
+          <Text style={styles.name}>
+            {loading ? "Loading..." : `${firstName(fullName)} 👋`}
+          </Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -24,58 +96,51 @@ export default function DashboardUI() {
       {/* Store card */}
       <View style={styles.storeCard}>
         <View style={styles.storeLeft}>
-          <Text style={styles.storeTitle}>My Design Shop</Text>
-          <Text style={styles.storeSub}>Today’s overview</Text>
+          <Text style={styles.storeTitle}>
+            {loading ? "Loading shop..." : shopName}
+          </Text>
+          <Text style={styles.storeSub}>
+            {loading ? "Fetching overview..." : "Today’s overview"}
+          </Text>
         </View>
         <View style={styles.proBadge}>
           <Text style={styles.proBadgeText}>PRO</Text>
         </View>
       </View>
 
-      {/* Summary cards (NOT orders list) */}
+      {/* Summary cards */}
       <View style={styles.grid}>
-        <StatCard title="Revenue" value="LKR 124,500" icon="cash-outline" />
-        <StatCard title="Customers" value="48" icon="people-outline" />
-        <StatCard title="Pending Tasks" value="7" icon="time-outline" />
-        <StatCard title="Low Stock" value="3 Items" icon="alert-circle-outline" />
+        <StatCard
+          title="Pending Tasks"
+          value={loading ? "..." : String(pendingTasks)}
+          icon="time-outline"
+        />
+
+          <StatCard
+            title="Completed Tasks"
+            value={loading ? "..." : String(completedTasks)}
+            icon="checkmark-circle-outline"
+          />
+
+        <StatCard
+          title="In Progress"
+          value={loading ? "..." : String(inProgressTasks)}
+          icon="construct-outline"
+        />
+
       </View>
 
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.actions}>
-        <ActionChip icon="add-circle-outline" label="New Order" />
-        <ActionChip icon="person-add-outline" label="Add Customer" />
-        <ActionChip icon="qr-code-outline" label="Scan" />
-        <ActionChip icon="document-text-outline" label="Generate Report" />
-      </View>
-
-      {/* Recent Activity (simple list) */}
-      <Text style={styles.sectionTitle}>Recent Activity</Text>
-      <View style={styles.list}>
-        <ActivityRow
-          icon="checkmark-circle-outline"
-          title="Payment received"
-          subtitle="Invoice #INV-1021"
-          time="2h ago"
-        />
-        <ActivityRow
-          icon="person-outline"
-          title="New customer added"
-          subtitle="Nimal Perera"
-          time="5h ago"
-        />
-        <ActivityRow
-          icon="warning-outline"
-          title="Stock running low"
-          subtitle="Item: Paper Bags"
-          time="1d ago"
-        />
-      </View>
     </ScrollView>
   );
 }
 
-/* ---- Small UI components (still UI only) ---- */
+function firstName(fullName) {
+  const s = String(fullName || "").trim();
+  if (!s) return "User";
+  return s.split(" ")[0];
+}
+
+/* ---- Small UI components ---- */
 
 function StatCard({ title, value, icon }) {
   return (
@@ -85,30 +150,6 @@ function StatCard({ title, value, icon }) {
         <Text style={styles.statTitle}>{title}</Text>
       </View>
       <Text style={styles.statValue}>{value}</Text>
-    </View>
-  );
-}
-
-function ActionChip({ icon, label }) {
-  return (
-    <Pressable style={styles.chip}>
-      <Ionicons name={icon} size={18} color="#111827" />
-      <Text style={styles.chipText}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function ActivityRow({ icon, title, subtitle, time }) {
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowIcon}>
-        <Ionicons name={icon} size={18} color="#111827" />
-      </View>
-      <View style={styles.rowBody}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        <Text style={styles.rowSub}>{subtitle}</Text>
-      </View>
-      <Text style={styles.rowTime}>{time}</Text>
     </View>
   );
 }
@@ -157,11 +198,7 @@ const styles = StyleSheet.create({
   },
   proBadgeText: { color: "#1677FF", fontWeight: "800", fontSize: 12 },
 
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   statCard: {
     width: "48%",
     backgroundColor: "#FFFFFF",
@@ -182,11 +219,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
