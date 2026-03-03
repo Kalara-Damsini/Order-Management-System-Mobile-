@@ -11,7 +11,7 @@ export default function Index() {
       const token = await AsyncStorage.getItem("accessToken");
       router.replace(token ? "/(main)/home" : "/(auth)/login");
     })();
-  }, []);
+  }, [router]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

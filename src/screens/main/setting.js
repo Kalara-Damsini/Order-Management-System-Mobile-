@@ -36,7 +36,7 @@ export default function SettingsScreen() {
     const { mode, changeTheme, theme } = useTheme();
     const styles = useMemo(() => makeStyles(theme), [theme]);
 
-    // ✅ only light/dark (no system)
+    // only light/dark (no system)
     const isDark = mode === "dark";
 
     const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function SettingsScreen() {
     const [profile, setProfile] = useState(null);
     const [shopName, setShopName] = useState("");
 
-    // ✅ accordion state
+    // accordion state
     const [profileOpen, setProfileOpen] = useState(false);
 
     const loadAll = useCallback(async () => {
@@ -130,7 +130,7 @@ export default function SettingsScreen() {
         await AsyncStorage.removeItem("accessToken");
         DeviceEventEmitter.emit("profile.updated");
 
-        // ✅ in expo-router, group name not needed
+        // in expo-router, group name not needed
         router.replace("/login"); // change if your login route is different
     };
 
@@ -140,7 +140,7 @@ export default function SettingsScreen() {
                 <Text style={styles.title}>Settings</Text>
                 <Text style={styles.sub}>Profile and appearance</Text>
 
-                {/* ✅ Appearance (2-side toggle) */}
+                {/* Appearance (2-side toggle) */}
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>Appearance</Text>
 
@@ -186,7 +186,7 @@ export default function SettingsScreen() {
                     </View>
                 </View>
 
-                {/* ✅ Profile collapsible dropdown (accordion) */}
+                {/* Profile collapsible dropdown (accordion) */}
                 <View style={styles.card}>
                     <Pressable
                         onPress={() => setProfileOpen((p) => !p)}
