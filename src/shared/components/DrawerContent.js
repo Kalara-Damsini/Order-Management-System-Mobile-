@@ -2,7 +2,7 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { usePathname, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DeviceEventEmitter,
   Image,
@@ -14,15 +14,34 @@ import {
 
 import { getMyProfileApi } from "../../features/auth/api/auth.api";
 import { getOrdersApi } from "../../features/orders/api/orders.api";
+import { useTheme } from "../../shared/theme/ThemeContext";
 
 const MENU = [
-  { label: "Dashboard", icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />, route: "/(main)/home" },
-  { label: "Orders", icon: (c, s) => <MaterialCommunityIcons name="cart-outline" size={s} color={c} />, route: "/(main)/orders" },
+  {
+    label: "Dashboard",
+    icon: (c, s) => <Ionicons name="grid-outline" size={s} color={c} />,
+    route: "/(main)/home",
+  },
+  {
+    label: "Orders",
+    icon: (c, s) => (
+      <MaterialCommunityIcons name="cart-outline" size={s} color={c} />
+    ),
+    route: "/(main)/orders",
+  },
 ];
 
 const UTILITY = [
-  { label: "Settings", icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />, route: "/(main)/setting" }, ,
-  { label: "Help & Support", icon: (c, s) => <Feather name="help-circle" size={s} color={c} />, route: "/(main)/help" },
+  {
+    label: "Settings",
+    icon: (c, s) => <Ionicons name="settings-outline" size={s} color={c} />,
+    route: "/(main)/setting",
+  },
+  {
+    label: "Help & Support",
+    icon: (c, s) => <Feather name="help-circle" size={s} color={c} />,
+    route: "/(main)/help",
+  },
 ];
 
 function initialLetter(name) {
@@ -33,11 +52,13 @@ function initialLetter(name) {
 export default function DrawerContent(props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
-  // badge count
   const [ordersCount, setOrdersCount] = useState(0);
 
   const go = (route) => {
@@ -50,8 +71,8 @@ export default function DrawerContent(props) {
 
   const renderItem = (item) => {
     const active = isActive(item.route);
-    const iconColor = active ? "#1677FF" : "#4B5563";
 
+    const iconColor = active ? theme.primary : theme.subtext;
     const badgeValue =
       item.route === "/(main)/orders" ? ordersCount : item.badge;
 
@@ -94,8 +115,6 @@ export default function DrawerContent(props) {
       const me = await getMyProfileApi();
       setProfile(me);
     } catch (e) {
-      console.log("PROFILE ERROR:", e?.message);
-
       const msg = String(e?.message || "");
       const isAuthError =
         msg.includes("401") ||
@@ -109,32 +128,26 @@ export default function DrawerContent(props) {
     }
   }, [router]);
 
-  // This is the important part: Drawer calculates count itself
   const loadOrdersCount = useCallback(async () => {
     try {
       const data = await getOrdersApi();
       const list = Array.isArray(data) ? data : [];
 
-      // exclude completed (case-insensitive)
       const count = list.filter(
         (o) => String(o?.status || "").toLowerCase().trim() !== "completed"
       ).length;
 
-      console.log("DRAWER ORDERS COUNT =", count);
       setOrdersCount(count);
-    } catch (e) {
-      console.log("DRAWER ORDERS COUNT ERROR:", e?.message);
+    } catch {
       setOrdersCount(0);
     }
   }, []);
 
-  // initial load
   useEffect(() => {
     loadProfile();
     loadOrdersCount();
   }, [loadProfile, loadOrdersCount]);
 
-  //refresh when drawer opens (VERY RELIABLE)
   useEffect(() => {
     const unsub = props.navigation?.addListener?.("drawerOpen", () => {
       loadProfile();
@@ -143,7 +156,6 @@ export default function DrawerContent(props) {
     return unsub;
   }, [props.navigation, loadProfile, loadOrdersCount]);
 
-  // optional: also refresh when you emit
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener("orders.updated", () => {
       loadOrdersCount();
@@ -191,16 +203,22 @@ export default function DrawerContent(props) {
           </View>
 
           <View style={styles.headerInfo}>
-            <Text style={styles.name} numberOfLines={1}>{fullName}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {fullName}
+            </Text>
 
             <View style={styles.subRow}>
-              <Text style={styles.company} numberOfLines={1}>{shopName}</Text>
+              <Text style={styles.company} numberOfLines={1}>
+                {shopName}
+              </Text>
               <Text style={styles.dot}>•</Text>
               <Text style={styles.pro}>PRO</Text>
             </View>
 
             {!!email && (
-              <Text style={styles.email} numberOfLines={1}>{email}</Text>
+              <Text style={styles.email} numberOfLines={1}>
+                {email}
+              </Text>
             )}
           </View>
 
@@ -208,7 +226,7 @@ export default function DrawerContent(props) {
             onPress={() => props.navigation?.closeDrawer?.()}
             style={styles.closeBtn}
           >
-            <Ionicons name="close" size={18} color="#111827" />
+            <Ionicons name="close" size={18} color={theme.text} />
           </Pressable>
         </View>
 
@@ -223,7 +241,7 @@ export default function DrawerContent(props) {
 
       <View style={styles.bottom}>
         <Pressable onPress={onLogout} style={styles.logoutRow}>
-          <Ionicons name="log-out-outline" size={20} color="#E11D48" />
+          <Ionicons name="log-out-outline" size={20} color={theme.danger} />
           <Text style={styles.logoutText}>Log out</Text>
         </Pressable>
 
@@ -236,44 +254,131 @@ export default function DrawerContent(props) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FFFFFF", borderTopRightRadius: 22, borderBottomRightRadius: 22, overflow: "hidden" },
-  scrollContent: { paddingBottom: 10 },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.card,
+      borderTopRightRadius: 22,
+      borderBottomRightRadius: 22,
+      overflow: "hidden",
+    },
+    scrollContent: { paddingBottom: 10 },
 
-  header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, flexDirection: "row", alignItems: "center", gap: 14 },
-  avatarWrap: { width: 62, height: 62 },
-  avatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: "#E5E7EB" },
-  avatarFallback: { width: 62, height: 62, borderRadius: 31, backgroundColor: "#E5E7EB", alignItems: "center", justifyContent: "center" },
-  avatarLetter: { fontSize: 20, fontWeight: "900", color: "#111827" },
+    header: {
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+    },
 
-  onlineDot: { position: "absolute", width: 14, height: 14, borderRadius: 7, backgroundColor: "#22C55E", right: 2, bottom: 2, borderWidth: 2, borderColor: "#FFFFFF" },
+    avatarWrap: { width: 62, height: 62 },
+    avatar: {
+      width: 62,
+      height: 62,
+      borderRadius: 31,
+      backgroundColor: theme.borderSoft,
+    },
+    avatarFallback: {
+      width: 62,
+      height: 62,
+      borderRadius: 31,
+      backgroundColor: theme.borderSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarLetter: { fontSize: 20, fontWeight: "900", color: theme.text },
 
-  headerInfo: { flex: 1 },
-  name: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  subRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  company: { fontSize: 14, color: "#6B7280", flexShrink: 1 },
-  dot: { marginHorizontal: 8, color: "#9CA3AF" },
-  pro: { fontSize: 14, fontWeight: "700", color: "#1677FF" },
-  email: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
+    onlineDot: {
+      position: "absolute",
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: "#22C55E",
+      right: 2,
+      bottom: 2,
+      borderWidth: 2,
+      borderColor: theme.card,
+    },
 
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(17,24,39,0.06)", justifyContent: "center", alignItems: "center" },
+    headerInfo: { flex: 1 },
+    name: { fontSize: 20, fontWeight: "800", color: theme.text },
+    subRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
+    company: { fontSize: 14, color: theme.subtext, flexShrink: 1 },
+    dot: { marginHorizontal: 8, color: theme.mutedText },
+    pro: { fontSize: 14, fontWeight: "700", color: theme.primary },
+    email: { fontSize: 12, color: theme.mutedText, marginTop: 4 },
 
-  sectionTitle: { marginTop: 18, marginBottom: 10, paddingHorizontal: 20, fontSize: 12, letterSpacing: 1.2, fontWeight: "800", color: "#9CA3AF" },
-  section: { paddingHorizontal: 14, gap: 10 },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.borderSoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
 
-  item: { height: 56, borderRadius: 16, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  itemPressed: { opacity: 0.9 },
-  itemActive: { backgroundColor: "#EAF3FF" },
-  itemLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  itemText: { fontSize: 16, fontWeight: "600", color: "#374151" },
-  itemTextActive: { color: "#1677FF" },
+    sectionTitle: {
+      marginTop: 18,
+      marginBottom: 10,
+      paddingHorizontal: 20,
+      fontSize: 12,
+      letterSpacing: 1.2,
+      fontWeight: "800",
+      color: theme.mutedText,
+    },
+    section: { paddingHorizontal: 14, gap: 10 },
 
-  badge: { minWidth: 30, height: 30, borderRadius: 15, backgroundColor: "#1677FF", justifyContent: "center", alignItems: "center", paddingHorizontal: 8 },
-  badgeText: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
+    item: {
+      height: 56,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    itemPressed: { opacity: 0.9 },
+    itemActive: {
+      backgroundColor: theme.mode === "dark" ? "#0B2A55" : "#EAF3FF",
+    },
+    itemLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+    itemText: { fontSize: 16, fontWeight: "600", color: theme.text },
+    itemTextActive: { color: theme.primary },
 
-  bottom: { borderTopWidth: 1, borderTopColor: "#F3F4F6", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16 },
-  logoutRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
-  logoutText: { fontSize: 16, fontWeight: "700", color: "#E11D48" },
-  metaRow: { marginTop: 8, flexDirection: "row", justifyContent: "space-between" },
-  metaText: { fontSize: 12, color: "#9CA3AF" },
-});
+    badge: {
+      minWidth: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: theme.primary,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 8,
+    },
+    badgeText: { color: "#FFFFFF", fontWeight: "800", fontSize: 13 },
+
+    bottom: {
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 16,
+      backgroundColor: theme.card,
+    },
+    logoutRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+    },
+    logoutText: { fontSize: 16, fontWeight: "700", color: theme.danger },
+
+    metaRow: {
+      marginTop: 8,
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    metaText: { fontSize: 12, color: theme.mutedText },
+  });
+}

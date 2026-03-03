@@ -10,15 +10,39 @@ import {
   View,
 } from "react-native";
 
-import { deleteOrderApi, getOrdersApi } from "../../../features/orders/api/orders.api";
+import {
+  deleteOrderApi,
+  getOrdersApi,
+} from "../../../features/orders/api/orders.api";
 import FloatingActionButton from "../../../features/orders/components/FloatingActionButton";
 import OrderCard from "../../../features/orders/components/OrderCard";
 import OrdersFilterBar from "../../../features/orders/components/OrdersFilterBar";
 import Screen from "../../../shared/components/Screen";
 import SearchBar from "../../../shared/components/SearchBar";
+import { useTheme } from "../../../shared/theme/ThemeContext";
 
 export default function OrdersListUI() {
   const router = useRouter();
+  const { theme } = useTheme();
+
+  // ✅ force dark palette (NO WHITE)
+  const darkOnly = useMemo(
+    () => ({
+      bg: "#0B1220",
+      card: "#0F172A",
+      cardSoft: "#0B1730",
+      text: "#E5E7EB",
+      subtext: "#9CA3AF",
+      border: "#1F2A44",
+      borderSoft: "#22304D",
+      danger: theme.danger, // keep from theme if you want
+      dangerBg: "#2A1212",
+      dangerBorder: "#5B1C1C",
+    }),
+    [theme.danger]
+  );
+
+  const styles = useMemo(() => makeStyles(darkOnly), [darkOnly]);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,14 +65,12 @@ export default function OrdersListUI() {
     return `${y}-${m}-${dd}`;
   }, []);
 
-  // ✅ emit count excluding completed (drawer badge)
   const emitOrdersCount = useCallback((list) => {
     const arr = Array.isArray(list) ? list : [];
     const count = arr.filter(
       (o) => String(o?.status || "").toLowerCase().trim() !== "completed"
     ).length;
 
-    console.log("ORDERS COUNT EMIT =", count);
     DeviceEventEmitter.emit("orders.count", count);
   }, []);
 
@@ -58,14 +80,10 @@ export default function OrdersListUI() {
       const data = await getOrdersApi();
       const list = Array.isArray(data) ? data : [];
       setOrders(list);
-
-      // ✅ update drawer badge
       emitOrdersCount(list);
     } catch (e) {
       Alert.alert("Orders error", e?.message || "Failed to load orders");
       setOrders([]);
-
-      // ✅ update drawer badge -> 0
       emitOrdersCount([]);
     } finally {
       setLoading(false);
@@ -85,11 +103,8 @@ export default function OrdersListUI() {
 
       try {
         setDeletingId(id);
-
-        // ✅ delete from backend
         await deleteOrderApi(id);
 
-        // ✅ remove from UI + update badge count
         setOrders((prev) => {
           const next = prev.filter((o) => getId(o) !== id);
           emitOrdersCount(next);
@@ -159,7 +174,6 @@ export default function OrdersListUI() {
           ? true
           : String(o?.platform ?? "") === mapPlatform[platform];
 
-      // if backend uses orderDate, change o?.placedDate -> o?.orderDate
       const placedOk = !pickedPlacedDate
         ? true
         : toYMD(o?.placedDate) === pickedPlacedDate;
@@ -175,7 +189,7 @@ export default function OrdersListUI() {
   }, [orders, query, status, platform, placedDate, toYMD, getId]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: darkOnly.bg }}>
       <Screen>
         <Text style={styles.title}>Orders</Text>
         <Text style={styles.sub}>
@@ -220,7 +234,7 @@ export default function OrdersListUI() {
                     style={[styles.iconBtn, isDeleting && { opacity: 0.5 }]}
                     hitSlop={10}
                   >
-                    <Ionicons name="trash" size={18} color="#DC2626" />
+                    <Ionicons name="trash" size={18} color={darkOnly.danger} />
                   </Pressable>
                 }
               />
@@ -234,26 +248,28 @@ export default function OrdersListUI() {
       <FloatingActionButton
         label="Add Order"
         icon="add"
-        onPress={() => router.push("/(main)/orders/create")} //correct route
+        onPress={() => router.push("/(main)/orders/create")}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "900", marginBottom: 4 },
-  sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
-  list: { marginTop: 14, gap: 12 },
-  empty: { marginTop: 12, color: "#6B7280", fontWeight: "700" },
+function makeStyles(t) {
+  return StyleSheet.create({
+    title: { fontSize: 22, fontWeight: "900", marginBottom: 4, color: t.text },
+    sub: { fontSize: 13, color: t.subtext, marginBottom: 14 },
+    list: { marginTop: 14, gap: 12 },
+    empty: { marginTop: 12, color: t.subtext, fontWeight: "700" },
 
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-});
+    iconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.dangerBg,
+      borderWidth: 1,
+      borderColor: t.dangerBorder,
+    },
+  });
+}

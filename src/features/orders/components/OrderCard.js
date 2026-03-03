@@ -1,10 +1,14 @@
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { useTheme } from "../../../shared/theme/ThemeContext"; // ✅ adjust path if needed
 import PlatformIcon from "./PlatformIcon";
 import StatusTag from "./StatusTag";
 
 export default function OrderCard({ order, onPress, rightAction }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const balance = useMemo(() => {
     const total = Number(order?.total ?? 0);
     const advance = Number(order?.advance ?? 0);
@@ -44,33 +48,35 @@ export default function OrderCard({ order, onPress, rightAction }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    position: "relative",
-    borderWidth: 1,
-    borderColor: "#EEF2F6",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-  },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    card: {
+      position: "relative",
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card, // ✅ dark card in dark mode (no white)
+      borderRadius: 18,
+      padding: 14,
+    },
 
-  // gives space so the delete icon doesn't cover right-side content
-  pressArea: {
-    paddingRight: 46,
-  },
+    // gives space so the delete icon doesn't cover right-side content
+    pressArea: { paddingRight: 46 },
 
-  topRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  left: { flex: 1 },
-  right: { alignItems: "flex-end", gap: 8 },
-  customer: { fontSize: 16, fontWeight: "900", color: "#111827" },
-  metaRow: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 8 },
-  deadline: { fontSize: 12, color: "#6B7280", fontWeight: "700" },
-  balance: { fontSize: 12, color: "#111827", fontWeight: "900" },
+    topRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
+    left: { flex: 1 },
+    right: { alignItems: "flex-end", gap: 8 },
 
-  // bottom-right delete button position
-  action: {
-    position: "absolute",
-    right: 10,
-    bottom: 10,
-  },
-});
+    customer: { fontSize: 16, fontWeight: "900", color: theme.text },
+    metaRow: {
+      marginTop: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    deadline: { fontSize: 12, color: theme.subtext, fontWeight: "700" },
+    balance: { fontSize: 12, color: theme.text, fontWeight: "900" },
+
+    // bottom-right delete button position
+    action: { position: "absolute", right: 10, bottom: 10 },
+  });
+}

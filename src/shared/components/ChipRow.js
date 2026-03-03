@@ -25,9 +25,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#0c2860",
   },
-  chipActive: { backgroundColor: "#EAF3FF" },
+  chipActive: { backgroundColor: "#0661d7" },
   text: { fontSize: 13, fontWeight: "800", color: "#374151" },
   textActive: { color: "#1677FF" },
 });

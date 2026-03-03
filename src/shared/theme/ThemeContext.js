@@ -1,26 +1,72 @@
-// src/theme/ThemeContext.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Appearance } from "react-native";
-import { DarkTheme, LightTheme } from "./colors";
 
-const ThemeContext = createContext(null);
+const STORAGE_KEY = "app.theme.mode"; // "light" | "dark" | "system"
 
-const STORAGE_KEY = "appThemeMode"; // "light" | "dark" | "system"
+const lightTheme = {
+    mode: "light",
+    bg: "#FFFFFF",
+    text: "#111827",
+    subtext: "#6B7280",
+    mutedText: "#9CA3AF",
 
-function resolveTheme(mode) {
-    if (mode === "system") {
-        const sys = Appearance.getColorScheme() || "light";
-        return sys === "dark" ? DarkTheme : LightTheme;
-    }
-    return mode === "dark" ? DarkTheme : LightTheme;
-}
+    card: "#FFFFFF",
+    cardSoft: "#F8FAFC",
+    border: "#EEF2F6",
+    borderSoft: "#F3F4F6",
+
+    primary: "#1677FF",
+    danger: "#DC2626",
+    dangerBg: "#FEF2F2",
+    dangerBorder: "#FECACA",
+
+    inputBg: "#FFFFFF",
+};
+
+const darkTheme = {
+    mode: "dark",
+    bg: "#0B1220",
+    text: "#E5E7EB",
+    subtext: "#A5B4FC",
+    mutedText: "#9CA3AF",
+
+    card: "#0F172A",
+    cardSoft: "#0B1730",
+    border: "#1F2A44",
+    borderSoft: "#22304D",
+
+    primary: "#5AA2FF",
+    danger: "#F87171",
+    dangerBg: "#2A1212",
+    dangerBorder: "#5B1C1C",
+
+    inputBg: "#0F172A",
+};
+
+const ThemeContext = createContext({
+    mode: "system",
+    theme: lightTheme,
+    changeTheme: (_mode) => { },
+});
 
 export function ThemeProvider({ children }) {
     const [mode, setMode] = useState("system"); // default
     const [systemScheme, setSystemScheme] = useState(Appearance.getColorScheme() || "light");
 
-    // listen system theme changes (only matters if mode === "system")
+    // load saved
+    useEffect(() => {
+        (async () => {
+            try {
+                const saved = await AsyncStorage.getItem(STORAGE_KEY);
+                if (saved === "light" || saved === "dark" || saved === "system") {
+                    setMode(saved);
+                }
+            } catch { }
+        })();
+    }, []);
+
+    // listen system change
     useEffect(() => {
         const sub = Appearance.addChangeListener(({ colorScheme }) => {
             setSystemScheme(colorScheme || "light");
@@ -28,36 +74,25 @@ export function ThemeProvider({ children }) {
         return () => sub?.remove?.();
     }, []);
 
-    // load saved mode
-    useEffect(() => {
-        (async () => {
-            const saved = await AsyncStorage.getItem(STORAGE_KEY);
-            if (saved === "light" || saved === "dark" || saved === "system") {
-                setMode(saved);
-            }
-        })();
-    }, []);
-
-    const theme = useMemo(() => {
-        if (mode === "system") {
-            return systemScheme === "dark" ? DarkTheme : LightTheme;
-        }
-        return resolveTheme(mode);
-    }, [mode, systemScheme]);
-
     const changeTheme = async (nextMode) => {
-        const m = nextMode === "light" || nextMode === "dark" || nextMode === "system" ? nextMode : "system";
+        const m = nextMode === "light" || nextMode === "dark" ? nextMode : "system";
         setMode(m);
-        await AsyncStorage.setItem(STORAGE_KEY, m);
+        try {
+            await AsyncStorage.setItem(STORAGE_KEY, m);
+        } catch { }
     };
 
-    const value = useMemo(() => ({ theme, mode, changeTheme }), [theme, mode]);
+    const activeScheme = mode === "system" ? systemScheme : mode;
+
+    const theme = useMemo(() => {
+        return activeScheme === "dark" ? darkTheme : lightTheme;
+    }, [activeScheme]);
+
+    const value = useMemo(() => ({ mode, theme, changeTheme }), [mode, theme]);
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
-    const ctx = useContext(ThemeContext);
-    if (!ctx) throw new Error("useTheme must be used inside ThemeProvider");
-    return ctx;
+    return useContext(ThemeContext);
 }

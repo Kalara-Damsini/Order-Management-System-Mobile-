@@ -10,8 +10,9 @@ import PlatformIcon from "../../../features/orders/components/PlatformIcon";
 import StatusTag from "../../../features/orders/components/StatusTag";
 import UploadProofBox from "../../../features/orders/components/UploadProofBox";
 import Screen from "../../../shared/components/Screen";
+import { useTheme } from "../../../shared/theme/ThemeContext";
 
-function Section({ title, children }) {
+function Section({ title, children, styles }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -20,7 +21,7 @@ function Section({ title, children }) {
   );
 }
 
-function Row({ label, value }) {
+function Row({ label, value, styles }) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -31,6 +32,8 @@ function Row({ label, value }) {
 
 export default function OrderDetailsUI() {
   const { id } = useLocalSearchParams();
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,7 +67,7 @@ export default function OrderDetailsUI() {
       setLoading(true);
       await uploadOrderProofApi(String(id), assets);
       Alert.alert("Success", "Proof uploaded!");
-      await load(); // reload order to show proof URLs if backend returns them
+      await load();
     } catch (e) {
       Alert.alert("Upload failed", e.message);
     } finally {
@@ -74,7 +77,7 @@ export default function OrderDetailsUI() {
 
   const setStatus = async (newStatus) => {
     try {
-      await updateOrderApi(String(id), { status: newStatus }); // ✅ PATCH
+      await updateOrderApi(String(id), { status: newStatus });
       await load();
     } catch (e) {
       Alert.alert("Update failed", e.message);
@@ -101,37 +104,27 @@ export default function OrderDetailsUI() {
     <Screen>
       <Text style={styles.title}>{order.orderCode || order.id}</Text>
 
-      {/* Status + update buttons */}
-      <Section title="Status">
+      <Section title="Status" styles={styles}>
         <View style={styles.statusRow}>
           <StatusTag status={order.status} />
           <View style={styles.statusBtns}>
-            <Pressable
-              style={styles.smallBtn}
-              onPress={() => setStatus("pending")}
-            >
+            <Pressable style={styles.smallBtn} onPress={() => setStatus("pending")}>
               <Text style={styles.smallBtnText}>Pending</Text>
             </Pressable>
-            <Pressable
-              style={styles.smallBtn}
-              onPress={() => setStatus("in_progress")}
-            >
+            <Pressable style={styles.smallBtn} onPress={() => setStatus("in_progress")}>
               <Text style={styles.smallBtnText}>In Progress</Text>
             </Pressable>
-            <Pressable
-              style={styles.smallBtn}
-              onPress={() => setStatus("completed")}
-            >
+            <Pressable style={styles.smallBtn} onPress={() => setStatus("completed")}>
               <Text style={styles.smallBtnText}>Completed</Text>
             </Pressable>
           </View>
         </View>
       </Section>
 
-      <Section title="Customer & Platform">
-        <Row label="Customer" value={order.customerName} />
-        <Row label="Mobile" value={order.mobileNo || "-"} />
-        <Row label="Address" value={order.address || "-"} />
+      <Section title="Customer & Platform" styles={styles}>
+        <Row label="Customer" value={order.customerName} styles={styles} />
+        <Row label="Mobile" value={order.mobileNo || "-"} styles={styles} />
+        <Row label="Address" value={order.address || "-"} styles={styles} />
 
         <View style={styles.row}>
           <Text style={styles.rowLabel}>Platform</Text>
@@ -142,86 +135,71 @@ export default function OrderDetailsUI() {
         </View>
       </Section>
 
-      <Section title="Payments">
-        <Row
-          label="Total"
-          value={`LKR ${Number(order.total || 0).toLocaleString()}`}
-        />
-        <Row
-          label="Advance"
-          value={`LKR ${Number(order.advance || 0).toLocaleString()}`}
-        />
-        <Row label="Balance" value={`LKR ${balance.toLocaleString()}`} />
+      <Section title="Payments" styles={styles}>
+        <Row label="Total" value={`LKR ${Number(order.total || 0).toLocaleString()}`} styles={styles} />
+        <Row label="Advance" value={`LKR ${Number(order.advance || 0).toLocaleString()}`} styles={styles} />
+        <Row label="Balance" value={`LKR ${balance.toLocaleString()}`} styles={styles} />
       </Section>
 
-      <Section title="Dates">
-        <Row label="Order Date" value={order.orderDate || "-"} />
-        <Row label="Deadline" value={order.deadline || "-"} />
+      <Section title="Dates" styles={styles}>
+        <Row label="Order Date" value={order.orderDate || "-"} styles={styles} />
+        <Row label="Deadline" value={order.deadline || "-"} styles={styles} />
       </Section>
 
-      <Section title="Notes">
+      <Section title="Notes" styles={styles}>
         <Text style={styles.noteText}>{order.notes || "No notes"}</Text>
       </Section>
 
-      <Section title="Delivery Proof">
-        {/* UI now, backend upload later */}
+      <Section title="Delivery Proof" styles={styles}>
         <UploadProofBox onPick={uploadProof} />
       </Section>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#111827",
-    marginBottom: 14,
-  },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    title: { fontSize: 22, fontWeight: "900", color: theme.text, marginBottom: 14 },
 
-  section: {
-    borderWidth: 1,
-    borderColor: "#EEF2F6",
-    borderRadius: 18,
-    padding: 14,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#111827",
-    marginBottom: 10,
-  },
+    section: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 18,
+      padding: 14,
+      backgroundColor: theme.card,
+      marginBottom: 12,
+    },
+    sectionTitle: { fontSize: 13, fontWeight: "900", color: theme.text, marginBottom: 10 },
 
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-  rowLabel: { fontSize: 12, fontWeight: "800", color: "#6B7280" },
-  rowValue: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#111827",
-    flexShrink: 1,
-    textAlign: "right",
-  },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: theme.borderSoft,
+    },
+    rowLabel: { fontSize: 12, fontWeight: "800", color: theme.subtext },
+    rowValue: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: theme.text,
+      flexShrink: 1,
+      textAlign: "right",
+    },
 
-  platformValue: { flexDirection: "row", alignItems: "center", gap: 8 },
+    platformValue: { flexDirection: "row", alignItems: "center", gap: 8 },
 
-  statusRow: { gap: 10 },
-  statusBtns: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  smallBtn: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  smallBtnText: { fontSize: 12, fontWeight: "900", color: "#374151" },
+    statusRow: { gap: 10 },
+    statusBtns: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    smallBtn: {
+      backgroundColor: theme.borderSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderRadius: 999,
+    },
+    smallBtnText: { fontSize: 12, fontWeight: "900", color: theme.text },
 
-  noteText: { color: "#374151", fontWeight: "700", lineHeight: 20 },
-});
+    noteText: { color: theme.text, fontWeight: "700", lineHeight: 20 },
+  });
+}

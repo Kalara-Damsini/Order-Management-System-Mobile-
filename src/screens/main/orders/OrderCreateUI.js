@@ -5,6 +5,7 @@ import { createOrderApi } from "../../../features/orders/api/orders.api";
 import OrderForm from "../../../features/orders/components/OrderForm";
 import AppButton from "../../../shared/components/AppButton";
 import Screen from "../../../shared/components/Screen";
+import { useTheme } from "../../../shared/theme/ThemeContext";
 
 function toYMD(date) {
   if (!date) return "";
@@ -15,7 +16,6 @@ function toYMD(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// Keep defaults in one place (so reset is clean)
 const initialValues = {
   customerName: "",
   mobileNo: "",
@@ -33,8 +33,10 @@ const initialValues = {
 
 export default function OrderCreateUI() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
+  const [loading, setLoading] = useState(false);
   const [values, setValues] = useState(initialValues);
 
   const balance = useMemo(() => {
@@ -48,10 +50,7 @@ export default function OrderCreateUI() {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  // ✅ Reset helper
-  const resetForm = () => {
-    setValues(initialValues);
-  };
+  const resetForm = () => setValues(initialValues);
 
   const onSave = async () => {
     if (!values.customerName.trim())
@@ -90,14 +89,8 @@ export default function OrderCreateUI() {
       await createOrderApi(payload);
 
       Alert.alert("Success", "Order created!");
-
-      //Reset form AFTER successful save
       resetForm();
 
-      // Option A: stay on page with empty form
-      // (do nothing else)
-
-      // Option B: go back to list (if you want)
       router.back();
     } catch (e) {
       Alert.alert("Create failed", e?.message || "Something went wrong");
@@ -107,7 +100,7 @@ export default function OrderCreateUI() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <Screen>
         <Text style={styles.title}>Add Order</Text>
         <Text style={styles.sub}>Fill the form and save</Text>
@@ -128,17 +121,19 @@ export default function OrderCreateUI() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "900", color: "#111827", marginBottom: 4 },
-  sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
-  sticky: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#EEF2F6",
-    backgroundColor: "#FFFFFF",
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    title: { fontSize: 22, fontWeight: "900", color: theme.text, marginBottom: 4 },
+    sub: { fontSize: 13, color: theme.subtext, marginBottom: 14 },
+    sticky: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: 14,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      backgroundColor: theme.card,
+    },
+  });
+}

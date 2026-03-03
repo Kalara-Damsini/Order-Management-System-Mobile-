@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as ImagePicker from "expo-image-picker";
@@ -10,9 +11,10 @@ import {
     Pressable,
     StyleSheet,
     Text,
-    View
+    View,
 } from "react-native";
-import { useTheme } from "../../shared/theme/ThemeContext.js";
+
+import { useTheme } from "../../shared/theme/ThemeContext";
 
 import {
     getMyProfileApi,
@@ -22,7 +24,6 @@ import {
 
 import AppButton from "../../shared/components/AppButton.js";
 import AppInput from "../../shared/components/AppInput.js";
-import Dropdown from "../../shared/components/Dropdown.js";
 import Screen from "../../shared/components/Screen.js";
 
 function initialLetter(name) {
@@ -33,7 +34,10 @@ function initialLetter(name) {
 export default function SettingsScreen() {
     const router = useRouter();
     const { mode, changeTheme, theme } = useTheme();
-    const themeLabel = mode === "system" ? "System" : mode === "dark" ? "Dark" : "Light";
+    const styles = useMemo(() => makeStyles(theme), [theme]);
+
+    // ✅ only light/dark (no system)
+    const isDark = mode === "dark";
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -42,14 +46,15 @@ export default function SettingsScreen() {
     const [profile, setProfile] = useState(null);
     const [shopName, setShopName] = useState("");
 
+    // ✅ accordion state
+    const [profileOpen, setProfileOpen] = useState(false);
+
     const loadAll = useCallback(async () => {
         try {
             setLoading(true);
-
             const me = await getMyProfileApi();
             setProfile(me);
             setShopName(me?.shopName || "");
-        
         } catch (e) {
             Alert.alert("Settings error", e?.message || "Failed to load settings");
         } finally {
@@ -60,7 +65,7 @@ export default function SettingsScreen() {
     useFocusEffect(
         useCallback(() => {
             loadAll();
-        }, [loadAll])
+        }, [loadAll]),
     );
 
     const fullName = profile?.fullName || "User";
@@ -68,11 +73,7 @@ export default function SettingsScreen() {
     const avatarUrl = profile?.avatarFullUrl || "";
 
     const versionText = useMemo(() => {
-        return (
-            Constants?.expoConfig?.version ||
-            Constants?.manifest?.version ||
-            "1.0.0"
-        );
+        return Constants?.expoConfig?.version || Constants?.manifest?.version || "1.0.0";
     }, []);
 
     const onSaveProfile = async () => {
@@ -113,11 +114,10 @@ export default function SettingsScreen() {
             setUploading(true);
             await uploadAvatarApi(uri);
 
-            // refresh profile after upload
             const me = await getMyProfileApi();
             setProfile(me);
 
-            DeviceEventEmitter.emit("profile.updated"); // refresh drawer
+            DeviceEventEmitter.emit("profile.updated");
             Alert.alert("Updated", "Profile picture updated");
         } catch (e) {
             Alert.alert("Upload failed", e?.message || "Could not upload avatar");
@@ -129,76 +129,148 @@ export default function SettingsScreen() {
     const onLogout = async () => {
         await AsyncStorage.removeItem("accessToken");
         DeviceEventEmitter.emit("profile.updated");
-        router.replace("/(auth)/login");
+
+        // ✅ in expo-router, group name not needed
+        router.replace("/login"); // change if your login route is different
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={[styles.root, { backgroundColor: theme.background || theme.bg }]}>
             <Screen>
                 <Text style={styles.title}>Settings</Text>
-                <Text style={styles.sub}>Profile, defaults, and app info</Text>
+                <Text style={styles.sub}>Profile and appearance</Text>
 
-                {/* Profile */}
+                {/* ✅ Appearance (2-side toggle) */}
                 <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Profile</Text>
+                    <Text style={styles.cardTitle}>Appearance</Text>
 
-                    <View style={styles.profileRow}>
-                        <Pressable onPress={onPickAvatar} style={styles.avatarWrap}>
-                            {avatarUrl ? (
-                                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-                            ) : (
-                                <View style={styles.avatarFallback}>
-                                    <Text style={styles.avatarLetter}>
-                                        {initialLetter(fullName)}
-                                    </Text>
-                                </View>
-                            )}
-                            <View style={styles.editDot}>
-                                <Text style={styles.editDotText}>✎</Text>
-                            </View>
-                        </Pressable>
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.rowLabel}>Theme</Text>
 
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.profileName} numberOfLines={1}>
-                                {loading ? "Loading..." : fullName}
-                            </Text>
-                            {!!email && (
-                                <Text style={styles.profileEmail} numberOfLines={1}>
-                                    {email}
+                        {/* segmented toggle */}
+                        <View style={styles.segment}>
+                            <Pressable
+                                onPress={() => changeTheme("light")}
+                                style={[
+                                    styles.segmentBtn,
+                                    !isDark && styles.segmentBtnActive,
+                                ]}
+                            >
+                                <Ionicons
+                                    name="sunny-outline"
+                                    size={16}
+                                    color={!isDark ? styles._activeText.color : styles._inactiveText.color}
+                                />
+                                <Text style={!isDark ? styles._activeText : styles._inactiveText}>
+                                    Light
                                 </Text>
-                            )}
-                            <Text style={styles.profileHint}>
-                                Tap avatar to {uploading ? "uploading..." : "change photo"}
-                            </Text>
+                            </Pressable>
+
+                            <Pressable
+                                onPress={() => changeTheme("dark")}
+                                style={[
+                                    styles.segmentBtn,
+                                    isDark && styles.segmentBtnActive,
+                                ]}
+                            >
+                                <Ionicons
+                                    name="moon-outline"
+                                    size={16}
+                                    color={isDark ? styles._activeText.color : styles._inactiveText.color}
+                                />
+                                <Text style={isDark ? styles._activeText : styles._inactiveText}>
+                                    Dark
+                                </Text>
+                            </Pressable>
                         </View>
                     </View>
+                </View>
 
-                    {/* Appearance (Theme) */}
-                    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        <Text style={[styles.cardTitle, { color: theme.text }]}>Appearance</Text>
+                {/* ✅ Profile collapsible dropdown (accordion) */}
+                <View style={styles.card}>
+                    <Pressable
+                        onPress={() => setProfileOpen((p) => !p)}
+                        style={({ pressed }) => [
+                            styles.accordionHeader,
+                            pressed && { opacity: 0.9 },
+                        ]}
+                    >
+                        <View style={styles.accordionLeft}>
+                            <View style={styles.smallAvatarWrap}>
+                                {avatarUrl ? (
+                                    <Image source={{ uri: avatarUrl }} style={styles.smallAvatar} />
+                                ) : (
+                                    <View style={styles.smallAvatarFallback}>
+                                        <Text style={styles.smallAvatarLetter}>{initialLetter(fullName)}</Text>
+                                    </View>
+                                )}
+                            </View>
 
-                        <Dropdown
-                            label="Theme"
-                            value={themeLabel}
-                            options={["Light", "Dark", "System"]}
-                            onChange={(val) => {
-                                const map = { Light: "light", Dark: "dark", System: "system" };
-                                changeTheme(map[val] || "system");
-                            }}
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.profileName} numberOfLines={1}>
+                                    {loading ? "Loading..." : fullName}
+                                </Text>
+                                {!!email && (
+                                    <Text style={styles.profileEmail} numberOfLines={1}>
+                                        {email}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+
+                        <Ionicons
+                            name={profileOpen ? "chevron-up" : "chevron-down"}
+                            size={20}
+                            color={theme.subText || theme.subtext}
                         />
-                    </View>
+                    </Pressable>
 
-                    <AppInput
-                        label="Shop Name"
-                        placeholder="Enter your shop name"
-                        value={shopName}
-                        onChangeText={setShopName}
-                    />
+                    {/* Expanded content (NOT a popup) */}
+                    {profileOpen ? (
+                        <View style={styles.accordionBody}>
+                            <View style={styles.bigProfileRow}>
+                                <Pressable onPress={onPickAvatar} style={styles.bigAvatarWrap}>
+                                    {avatarUrl ? (
+                                        <Image source={{ uri: avatarUrl }} style={styles.bigAvatar} />
+                                    ) : (
+                                        <View style={styles.bigAvatarFallback}>
+                                            <Text style={styles.bigAvatarLetter}>{initialLetter(fullName)}</Text>
+                                        </View>
+                                    )}
 
-                    <AppButton
-                        title={saving ? "Saving..." : "Save Profile"}
-                        onPress={onSaveProfile}
-                    />
+                                    <View style={styles.editDot}>
+                                        <Text style={styles.editDotText}>✎</Text>
+                                    </View>
+                                </Pressable>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.bigName} numberOfLines={1}>
+                                        {fullName}
+                                    </Text>
+                                    {!!email && (
+                                        <Text style={styles.bigEmail} numberOfLines={1}>
+                                            {email}
+                                        </Text>
+                                    )}
+                                    <Text style={styles.profileHint}>
+                                        Tap avatar to {uploading ? "uploading..." : "change photo"}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <AppInput
+                                label="Shop Name"
+                                placeholder="Enter your shop name"
+                                value={shopName}
+                                onChangeText={setShopName}
+                            />
+
+                            <AppButton
+                                title={saving ? "Saving..." : "Save Profile"}
+                                onPress={onSaveProfile}
+                            />
+                        </View>
+                    ) : null}
                 </View>
 
                 {/* About */}
@@ -221,66 +293,155 @@ export default function SettingsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    title: { fontSize: 22, fontWeight: "900", color: "#111827", marginBottom: 4 },
-    sub: { fontSize: 13, color: "#6B7280", marginBottom: 14 },
+function makeStyles(theme) {
+    const bg = theme.background || theme.bg || "#FFFFFF";
+    const card = theme.card || "#FFFFFF";
+    const border = theme.border || "#EEF2F6";
+    const text = theme.text || "#111827";
+    const sub = theme.subText || theme.subtext || "#6B7280";
+    const muted = theme.mutedText || sub;
+    const primary = theme.primary || "#1677FF";
+    const danger = theme.danger || "#DC2626";
 
-    card: {
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: "#EEF2F6",
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 12,
-        gap: 10,
-    },
-    cardTitle: { fontSize: 14, fontWeight: "900", color: "#111827" },
-    cardDesc: { fontSize: 12, color: "#6B7280", marginTop: -6 },
+    // for segmented control
+    const segmentBg = theme.mode === "dark" ? "#0F172A" : "#F3F4F6";
+    const segmentBorder = border;
+    const activeBg = theme.mode === "dark" ? "#111A2E" : "#FFFFFF";
 
-    profileRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-    avatarWrap: { width: 62, height: 62 },
-    avatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: "#E5E7EB" },
-    avatarFallback: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-        backgroundColor: "#E5E7EB",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    avatarLetter: { fontSize: 20, fontWeight: "900", color: "#111827" },
-    editDot: {
-        position: "absolute",
-        right: 0,
-        bottom: 0,
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: "#1677FF",
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 2,
-        borderColor: "#FFFFFF",
-    },
-    editDotText: { color: "#FFFFFF", fontWeight: "900", fontSize: 12 },
+    return StyleSheet.create({
+        root: { flex: 1, backgroundColor: bg },
 
-    profileName: { fontSize: 16, fontWeight: "900", color: "#111827" },
-    profileEmail: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-    profileHint: { fontSize: 11, color: "#9CA3AF", marginTop: 6 },
+        title: { fontSize: 22, fontWeight: "900", color: text, marginBottom: 4 },
+        sub: { fontSize: 13, color: sub, marginBottom: 14 },
 
-    aboutRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
-    aboutLabel: { fontSize: 13, color: "#6B7280", fontWeight: "700" },
-    aboutValue: { fontSize: 13, color: "#111827", fontWeight: "900" },
+        card: {
+            backgroundColor: card,
+            borderWidth: 1,
+            borderColor: border,
+            borderRadius: 18,
+            padding: 14,
+            marginBottom: 12,
+            gap: 10,
+        },
+        cardTitle: { fontSize: 14, fontWeight: "900", color: text },
 
-    logoutBtn: {
-        height: 48,
-        borderRadius: 14,
-        backgroundColor: "#FEF2F2",
-        borderWidth: 1,
-        borderColor: "#FECACA",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 6,
-    },
-    logoutText: { color: "#DC2626", fontWeight: "900", fontSize: 15 },
-});
+        hint: { fontSize: 12, color: muted, marginTop: -4 },
+
+        /* --- Appearance Toggle --- */
+        toggleRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            marginTop: 2,
+        },
+        rowLabel: { fontSize: 13, fontWeight: "800", color: text },
+
+        segment: {
+            flexDirection: "row",
+            backgroundColor: segmentBg,
+            borderWidth: 1,
+            borderColor: segmentBorder,
+            borderRadius: 999,
+            overflow: "hidden",
+        },
+        segmentBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+        },
+        segmentBtnActive: {
+            backgroundColor: activeBg,
+        },
+        _activeText: { color: text, fontWeight: "900", fontSize: 13 },
+        _inactiveText: { color: sub, fontWeight: "900", fontSize: 13 },
+
+        /* --- Profile Accordion --- */
+        accordionHeader: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
+        accordionLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+
+        smallAvatarWrap: { width: 42, height: 42 },
+        smallAvatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: border },
+        smallAvatarFallback: {
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            backgroundColor: theme.inputBg || (theme.mode === "dark" ? "#0F172A" : "#F8FAFC"),
+            borderWidth: 1,
+            borderColor: border,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        smallAvatarLetter: { color: text, fontWeight: "900" },
+
+        profileName: { fontSize: 14, fontWeight: "900", color: text },
+        profileEmail: { fontSize: 12, color: sub, marginTop: 2 },
+
+        accordionBody: {
+            marginTop: 10,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: border,
+            gap: 10,
+        },
+
+        bigProfileRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+
+        bigAvatarWrap: { width: 62, height: 62 },
+        bigAvatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: border },
+        bigAvatarFallback: {
+            width: 62,
+            height: 62,
+            borderRadius: 31,
+            backgroundColor: theme.inputBg || (theme.mode === "dark" ? "#0F172A" : "#F8FAFC"),
+            borderWidth: 1,
+            borderColor: border,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        bigAvatarLetter: { fontSize: 20, fontWeight: "900", color: text },
+
+        editDot: {
+            position: "absolute",
+            right: 0,
+            bottom: 0,
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: primary,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 2,
+            borderColor: card,
+        },
+        editDotText: { color: "#FFFFFF", fontWeight: "900", fontSize: 12 },
+
+        bigName: { fontSize: 16, fontWeight: "900", color: text },
+        bigEmail: { fontSize: 12, color: sub, marginTop: 2 },
+        profileHint: { fontSize: 11, color: muted, marginTop: 6 },
+
+        /* --- About --- */
+        aboutRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
+        aboutLabel: { fontSize: 13, color: sub, fontWeight: "700" },
+        aboutValue: { fontSize: 13, color: text, fontWeight: "900" },
+
+        /* --- Logout --- */
+        logoutBtn: {
+            height: 48,
+            borderRadius: 14,
+            backgroundColor: theme.mode === "dark" ? "#2A0E12" : "#FEF2F2",
+            borderWidth: 1,
+            borderColor: theme.mode === "dark" ? "#5B1B22" : "#FECACA",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 6,
+        },
+        logoutText: { color: danger, fontWeight: "900", fontSize: 15 },
+    });
+}

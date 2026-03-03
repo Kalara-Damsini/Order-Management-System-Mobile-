@@ -1,16 +1,19 @@
 import * as ImagePicker from "expo-image-picker";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { getMyProfileApi, updateMyProfileApi, uploadAvatarApi } from "../../features/auth/api/auth.api";
 import AppButton from "../../shared/components/AppButton";
 import Screen from "../../shared/components/Screen";
 import { resolveApiUrl } from "../../shared/config/env";
+import { useTheme } from "../../shared/theme/ThemeContext";
 
 export default function ProfileUI() {
+    const { theme } = useTheme();
+    const styles = useMemo(() => makeStyles(theme), [theme]);
+
     const [loading, setLoading] = useState(false);
     const [profile, setProfile] = useState(null);
-
     const [shopName, setShopName] = useState("");
 
     const load = async () => {
@@ -45,12 +48,7 @@ export default function ProfileUI() {
             const uri = result.assets?.[0]?.uri;
             const res = await uploadAvatarApi(uri);
 
-            // update local UI immediately
-            setProfile((p) => ({
-                ...(p || {}),
-                avatarUrl: res.avatarUrl,
-            }));
-
+            setProfile((p) => ({ ...(p || {}), avatarUrl: res.avatarUrl }));
             Alert.alert("Success", "Profile photo updated!");
         } catch (e) {
             Alert.alert("Upload failed", e?.message || "Could not upload avatar");
@@ -103,6 +101,7 @@ export default function ProfileUI() {
                 value={shopName}
                 onChangeText={setShopName}
                 placeholder="Enter your shop name"
+                placeholderTextColor={theme.mutedText}
                 style={styles.input}
             />
 
@@ -111,32 +110,35 @@ export default function ProfileUI() {
     );
 }
 
-const styles = StyleSheet.create({
-    title: { fontSize: 22, fontWeight: "900", color: "#111827", marginBottom: 4 },
-    sub: { fontSize: 13, color: "#6B7280", marginBottom: 18 },
+function makeStyles(theme) {
+    return StyleSheet.create({
+        title: { fontSize: 22, fontWeight: "900", color: theme.text, marginBottom: 4 },
+        sub: { fontSize: 13, color: theme.subtext, marginBottom: 18 },
 
-    avatarBlock: { alignItems: "center", marginBottom: 22 },
-    avatarPress: { borderRadius: 999, overflow: "hidden" },
-    avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: "#E5E7EB" },
-    avatarFallback: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        backgroundColor: "#E5E7EB",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    avatarLetter: { fontSize: 28, fontWeight: "900", color: "#111827" },
-    changeText: { marginTop: 10, color: "#1677FF", fontWeight: "800" },
+        avatarBlock: { alignItems: "center", marginBottom: 22 },
+        avatarPress: { borderRadius: 999, overflow: "hidden" },
+        avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: theme.borderSoft },
+        avatarFallback: {
+            width: 96,
+            height: 96,
+            borderRadius: 48,
+            backgroundColor: theme.borderSoft,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        avatarLetter: { fontSize: 28, fontWeight: "900", color: theme.text },
+        changeText: { marginTop: 10, color: theme.primary, fontWeight: "800" },
 
-    label: { fontSize: 13, color: "#6B7280", marginBottom: 6 },
-    input: {
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        marginBottom: 16,
-        backgroundColor: "#FFFFFF",
-    },
-});
+        label: { fontSize: 13, color: theme.subtext, marginBottom: 6 },
+        input: {
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            marginBottom: 16,
+            backgroundColor: theme.inputBg,
+            color: theme.text,
+        },
+    });
+}

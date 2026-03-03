@@ -1,19 +1,26 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../theme/ThemeContext"; // ✅ adjust path if needed
 
-
-export default function AppInput({ label,
+export default function AppInput({
+  label,
   placeholder,
   secureTextEntry,
   keyboardType,
   value,
   onChangeText,
-  autoCapitalize = "none", }) {
+  autoCapitalize = "none",
+}) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
-     <View style={styles.container}>
+    <View style={styles.container}>
       {!!label && <Text style={styles.label}>{label}</Text>}
+
       <TextInput
         placeholder={placeholder}
+        placeholderTextColor={theme.mutedText}
         style={styles.input}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
@@ -25,16 +32,19 @@ export default function AppInput({ label,
   );
 }
 
-const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
-  label: { fontSize: 14, marginBottom: 6, color: "#333" },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    backgroundColor: colors.bg,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    container: { marginBottom: 16 },
+    label: { fontSize: 14, marginBottom: 6, color: theme.subtext, fontWeight: "700" },
+    input: {
+      height: 48,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      fontSize: 16,
+      backgroundColor: theme.inputBg,
+      color: theme.text,
+    },
+  });
+}

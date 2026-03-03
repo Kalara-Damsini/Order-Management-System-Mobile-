@@ -1,6 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useTheme } from "../theme/ThemeContext"; // ✅ adjust path if needed
 
 export default function Dropdown({
   label,
@@ -9,6 +17,9 @@ export default function Dropdown({
   options = [],
   onChange,
 }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const [open, setOpen] = useState(false);
 
   const display = useMemo(() => {
@@ -25,18 +36,23 @@ export default function Dropdown({
           <Text style={[styles.value, display === placeholder && styles.placeholder]}>
             {display}
           </Text>
-          <Ionicons name="chevron-down" size={18} color="#6B7280" />
+          <Ionicons name="chevron-down" size={18} color={theme.subtext} />
         </Pressable>
       </View>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
 
         <View style={styles.sheet}>
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>{label || "Select"}</Text>
             <Pressable onPress={() => setOpen(false)} style={styles.closeBtn}>
-              <Ionicons name="close" size={18} color="#111827" />
+              <Ionicons name="close" size={18} color={theme.text} />
             </Pressable>
           </View>
 
@@ -52,8 +68,10 @@ export default function Dropdown({
                     setOpen(false);
                   }}
                 >
-                  <Text style={[styles.optionText, active && styles.optionTextActive]}>{opt}</Text>
-                  {active && <Ionicons name="checkmark" size={18} color="#1677FF" />}
+                  <Text style={[styles.optionText, active && styles.optionTextActive]}>
+                    {opt}
+                  </Text>
+                  {active && <Ionicons name="checkmark" size={18} color={theme.primary} />}
                 </Pressable>
               );
             })}
@@ -64,68 +82,73 @@ export default function Dropdown({
   );
 }
 
-const styles = StyleSheet.create({
-  field: { flex: 1, gap: 6 },
-  label: { fontSize: 12, fontWeight: "800", color: "#111827" },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    field: { flex: 1, gap: 6 },
+    label: { fontSize: 12, fontWeight: "800", color: theme.text },
 
-  box: {
-    height: 46,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#EEF2F6",
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  value: { fontSize: 13, fontWeight: "800", color: "#111827" },
-  placeholder: { color: "#9CA3AF" },
+    box: {
+      height: 46,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.cardSoft,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    value: { fontSize: 13, fontWeight: "800", color: theme.text },
+    placeholder: { color: theme.mutedText },
 
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  sheet: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    top: 120,
-    bottom: 120,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#EEF2F6",
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-    marginBottom: 10,
-  },
-  sheetTitle: { fontSize: 14, fontWeight: "900", color: "#111827" },
-  closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    backdrop: {
+      flex: 1,
+      backgroundColor: theme.mode === "dark" ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.35)",
+    },
 
-  option: {
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  optionActive: { backgroundColor: "#EAF3FF" },
-  optionText: { fontSize: 13, fontWeight: "800", color: "#374151" },
-  optionTextActive: { color: "#1677FF" },
-});
+    sheet: {
+      position: "absolute",
+      left: 14,
+      right: 14,
+      top: 120,
+      bottom: 120,
+      backgroundColor: theme.card,
+      borderRadius: 18,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    sheetHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingBottom: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderSoft,
+      marginBottom: 10,
+    },
+    sheetTitle: { fontSize: 14, fontWeight: "900", color: theme.text },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: theme.borderSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    option: {
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderRadius: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    optionActive: {
+      backgroundColor: theme.mode === "dark" ? "#0B2A55" : "#EAF3FF",
+    },
+    optionText: { fontSize: 13, fontWeight: "800", color: theme.text },
+    optionTextActive: { color: theme.primary },
+  });
+}
